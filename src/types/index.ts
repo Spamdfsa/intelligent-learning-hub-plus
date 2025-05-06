@@ -38,6 +38,14 @@ export interface Task {
   completed?: boolean;
   description?: string;
   dueDate?: string;
+  questions?: QuizQuestion[];
+}
+
+export interface QuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctOption: number;
 }
 
 export interface ChatMessage {
