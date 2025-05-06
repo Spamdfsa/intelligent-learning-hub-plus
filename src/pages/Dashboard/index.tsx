@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { User, Course } from "@/types";
 import { mockCourses } from "@/data/mockData";
 import CourseCard from "@/components/courses/CourseCard";
-import { BarChart, BookOpen, Calendar, Clock, Graduation } from "lucide-react";
+import { BarChart, BookOpen, Calendar, Clock, GraduationCap } from "lucide-react";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -47,7 +47,7 @@ const Dashboard = () => {
     if (user?.role === "admin") {
       return [
         { title: "Aktive Kurse", value: "18", icon: <BookOpen className="h-4 w-4" /> },
-        { title: "Eingeschriebene Nutzer", value: "245", icon: <Graduation className="h-4 w-4" /> },
+        { title: "Eingeschriebene Nutzer", value: "245", icon: <GraduationCap className="h-4 w-4" /> },
         { title: "Aufgabeneinreichungen", value: "87", icon: <Calendar className="h-4 w-4" /> },
         { title: "Avg. Engagement", value: "73%", icon: <BarChart className="h-4 w-4" /> },
       ];
@@ -56,7 +56,7 @@ const Dashboard = () => {
     if (user?.role === "teacher") {
       return [
         { title: "Aktive Kurse", value: "4", icon: <BookOpen className="h-4 w-4" /> },
-        { title: "Studierende", value: "86", icon: <Graduation className="h-4 w-4" /> },
+        { title: "Studierende", value: "86", icon: <GraduationCap className="h-4 w-4" /> },
         { title: "Offene Bewertungen", value: "12", icon: <Calendar className="h-4 w-4" /> },
         { title: "Avg. Bestehensrate", value: "84%", icon: <BarChart className="h-4 w-4" /> },
       ];
@@ -64,7 +64,7 @@ const Dashboard = () => {
     
     return [
       { title: "Belegte Kurse", value: "4", icon: <BookOpen className="h-4 w-4" /> },
-      { title: "Abgeschlossene Module", value: "8", icon: <Graduation className="h-4 w-4" /> },
+      { title: "Abgeschlossene Module", value: "8", icon: <GraduationCap className="h-4 w-4" /> },
       { title: "Nächste Deadline", value: "2 Tage", icon: <Clock className="h-4 w-4" /> },
       { title: "Gesamtfortschritt", value: "65%", icon: <BarChart className="h-4 w-4" /> },
     ];

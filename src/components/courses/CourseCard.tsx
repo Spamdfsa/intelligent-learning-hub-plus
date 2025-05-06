@@ -14,7 +14,7 @@ const CourseCard = ({ course, showProgress = true, className, ...props }: Course
   const bannerColorClass = `bg-${course.bannerColor}-500`;
 
   return (
-    <div className={cn("course-card", className)} {...props}>
+    <div className={cn("course-card group", className)} {...props}>
       <div className={cn("course-card-banner", bannerColorClass)}></div>
       <div className="course-card-content">
         <h3 className="course-card-title">{course.title}</h3>

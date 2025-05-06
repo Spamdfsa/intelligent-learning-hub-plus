@@ -97,7 +97,7 @@
 
 @layer components {
   .course-card {
-    @apply group relative overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md;
+    @apply relative overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md;
   }
 
   .course-card-banner {
@@ -105,7 +105,12 @@
   }
 
   .course-card-banner-image {
-    @apply h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105;
+    @apply h-full w-full object-cover object-center transition-transform duration-300;
+  }
+
+  /* Apply group-hover effect directly in HTML */
+  .group:hover .course-card-banner-image {
+    @apply scale-105;
   }
 
   .course-card-content {
