@@ -12,6 +12,8 @@ import CourseDetail from "./pages/Courses/CourseDetail";
 import AiTutor from "./pages/AiTutor";
 import TasksPage from "./pages/Tasks";
 import SummariesPage from "./pages/Summaries";
+import ModulesPage from "./pages/Modules";
+import SettingsPage from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,13 +35,14 @@ const App = () => (
             <Route path="/courses/:courseId" element={<CourseDetail />} />
             <Route path="/ai-tutor" element={<AiTutor />} />
             <Route path="/tasks" element={<TasksPage />} />
+            <Route path="/modules" element={<ModulesPage />} />
             <Route path="/summaries" element={<SummariesPage />} />
             <Route path="/assignments" element={<Dashboard />} />
             <Route path="/students" element={<Dashboard />} />
             <Route path="/users" element={<Dashboard />} />
             <Route path="/analytics" element={<Dashboard />} />
             <Route path="/profile" element={<Dashboard />} />
-            <Route path="/settings" element={<Dashboard />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

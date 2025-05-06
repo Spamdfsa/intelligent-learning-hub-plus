@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { mockCourses } from "@/data/mockData";
 import { Course, User } from "@/types";
 import CourseCard from "@/components/courses/CourseCard";
@@ -13,12 +13,27 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 const CoursesPage = () => {
   const [user, setUser] = useState<User | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     // Get user from localStorage
@@ -39,12 +54,17 @@ const CoursesPage = () => {
                           (filter === "intermediate" && course.level === "Intermediate") ||
                           (filter === "advanced" && course.level === "Advanced");
     
-    const matchesSearch = search === "" ||
-                          course.title.toLowerCase().includes(search.toLowerCase()) ||
-                          course.description.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = searchQuery === "" ||
+                          course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          course.description.toLowerCase().includes(searchQuery.toLowerCase());
     
     return matchesFilter && matchesSearch;
   });
+
+  const handleSelect = (currentValue: string) => {
+    setSearchQuery(currentValue);
+    setOpen(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -64,14 +84,51 @@ const CoursesPage = () => {
 
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
         <div className="relative w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            type="search" 
-            placeholder="Nach Kursen suchen..." 
-            className="pl-10 w-full"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)} 
-          />
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  type="search" 
+                  placeholder="Nach Kursen suchen..." 
+                  className="pl-10 w-full"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onClick={() => setOpen(true)} 
+                />
+              </div>
+            </PopoverTrigger>
+            <PopoverContent className="p-0 w-[calc(100vw-2rem)] sm:w-[400px]" align="start">
+              <Command>
+                <CommandInput 
+                  placeholder="Suche nach Kursname oder Beschreibung..." 
+                  value={search}
+                  onValueChange={setSearch}
+                />
+                <CommandList>
+                  <CommandEmpty>Keine Kurse gefunden</CommandEmpty>
+                  <CommandGroup heading="Kurse">
+                    {courses
+                      .filter(course => 
+                        course.title.toLowerCase().includes(search.toLowerCase()) || 
+                        course.description.toLowerCase().includes(search.toLowerCase())
+                      )
+                      .slice(0, 5)
+                      .map(course => (
+                        <CommandItem 
+                          key={course.id} 
+                          value={course.title}
+                          onSelect={handleSelect}
+                        >
+                          {course.title}
+                        </CommandItem>
+                      ))
+                    }
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
         <Select value={filter} onValueChange={setFilter}>
           <SelectTrigger className="w-full sm:w-[180px]">

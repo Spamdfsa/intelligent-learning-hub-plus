@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { 
   Card, 
   CardContent, 
@@ -8,6 +9,7 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import { User, Course } from "@/types";
 import { mockCourses } from "@/data/mockData";
 import CourseCard from "@/components/courses/CourseCard";
@@ -16,6 +18,7 @@ import { BarChart, BookOpen, Calendar, Clock, GraduationCap } from "lucide-react
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Get user from localStorage
@@ -46,27 +49,27 @@ const Dashboard = () => {
   const getStatistics = () => {
     if (user?.role === "admin") {
       return [
-        { title: "Aktive Kurse", value: "18", icon: <BookOpen className="h-4 w-4" /> },
-        { title: "Eingeschriebene Nutzer", value: "245", icon: <GraduationCap className="h-4 w-4" /> },
-        { title: "Aufgabeneinreichungen", value: "87", icon: <Calendar className="h-4 w-4" /> },
-        { title: "Avg. Engagement", value: "73%", icon: <BarChart className="h-4 w-4" /> },
+        { title: "Aktive Kurse", value: "18", icon: <BookOpen className="h-4 w-4" />, path: "/courses" },
+        { title: "Eingeschriebene Nutzer", value: "245", icon: <GraduationCap className="h-4 w-4" />, path: "/users" },
+        { title: "Aufgabeneinreichungen", value: "87", icon: <Calendar className="h-4 w-4" />, path: "/assignments" },
+        { title: "Avg. Engagement", value: "73%", icon: <BarChart className="h-4 w-4" />, path: "/analytics" },
       ];
     }
     
     if (user?.role === "teacher") {
       return [
-        { title: "Aktive Kurse", value: "4", icon: <BookOpen className="h-4 w-4" /> },
-        { title: "Studierende", value: "86", icon: <GraduationCap className="h-4 w-4" /> },
-        { title: "Offene Bewertungen", value: "12", icon: <Calendar className="h-4 w-4" /> },
-        { title: "Avg. Bestehensrate", value: "84%", icon: <BarChart className="h-4 w-4" /> },
+        { title: "Aktive Kurse", value: "4", icon: <BookOpen className="h-4 w-4" />, path: "/courses/teaching" },
+        { title: "Studierende", value: "86", icon: <GraduationCap className="h-4 w-4" />, path: "/students" },
+        { title: "Offene Bewertungen", value: "12", icon: <Calendar className="h-4 w-4" />, path: "/assignments" },
+        { title: "Avg. Bestehensrate", value: "84%", icon: <BarChart className="h-4 w-4" />, path: "/analytics" },
       ];
     }
     
     return [
-      { title: "Belegte Kurse", value: "4", icon: <BookOpen className="h-4 w-4" /> },
-      { title: "Abgeschlossene Module", value: "8", icon: <GraduationCap className="h-4 w-4" /> },
-      { title: "Nächste Deadline", value: "2 Tage", icon: <Clock className="h-4 w-4" /> },
-      { title: "Gesamtfortschritt", value: "65%", icon: <BarChart className="h-4 w-4" /> },
+      { title: "Belegte Kurse", value: "4", icon: <BookOpen className="h-4 w-4" />, path: "/courses" },
+      { title: "Abgeschlossene Module", value: "8", icon: <GraduationCap className="h-4 w-4" />, path: "/modules" },
+      { title: "Nächste Deadline", value: "2 Tage", icon: <Clock className="h-4 w-4" />, path: "/tasks" },
+      { title: "Gesamtfortschritt", value: "65%", icon: <BarChart className="h-4 w-4" />, path: null },
     ];
   };
 
@@ -103,7 +106,7 @@ const Dashboard = () => {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {getStatistics().map((stat, index) => (
-          <Card key={index}>
+          <Card key={index} className="cursor-pointer hover:shadow-md transition-all" onClick={() => stat.path && navigate(stat.path)}>
             <CardContent className="p-6 flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
@@ -134,23 +137,28 @@ const Dashboard = () => {
           <CardContent>
             <div className="space-y-4">
               {courses.slice(0, 3).map((course) => (
-                <div key={course.id} className="flex items-center gap-4">
-                  <div className={`h-10 w-10 rounded-md bg-${course.bannerColor}-500 flex items-center justify-center text-white`}>
-                    <BookOpen className="h-5 w-5" />
+                <Link to={`/courses/${course.id}`} key={course.id} className="block">
+                  <div className="flex items-center gap-4 p-2 rounded-md hover:bg-muted">
+                    <div className={`h-10 w-10 rounded-md bg-${course.bannerColor}-500 flex items-center justify-center text-white`}>
+                      <BookOpen className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <p className="font-medium leading-none">{course.title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {user?.role === "student" 
+                          ? `${course.progress}% abgeschlossen` 
+                          : `${course.enrolledStudents} Teilnehmer`}
+                      </p>
+                    </div>
+                    {user?.role === "student" && (
+                      <Progress value={course.progress} className="w-20 h-2" />
+                    )}
                   </div>
-                  <div className="flex-1 space-y-1">
-                    <p className="font-medium leading-none">{course.title}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {user?.role === "student" 
-                        ? `${course.progress}% abgeschlossen` 
-                        : `${course.enrolledStudents} Teilnehmer`}
-                    </p>
-                  </div>
-                  {user?.role === "student" && (
-                    <Progress value={course.progress} className="w-20 h-2" />
-                  )}
-                </div>
+                </Link>
               ))}
+              <Button variant="outline" className="w-full" asChild>
+                <Link to="/courses">Alle Kurse anzeigen</Link>
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -212,6 +220,10 @@ const Dashboard = () => {
                   </span>
                 </div>
               </div>
+              
+              <Button variant="outline" className="w-full" asChild>
+                <Link to="/tasks">Alle Aufgaben anzeigen</Link>
+              </Button>
             </div>
           </CardContent>
         </Card>

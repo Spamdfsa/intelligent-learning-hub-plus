@@ -29,6 +29,7 @@ export interface Module {
   title: string;
   description: string;
   tasks: Task[];
+  completed?: boolean;
 }
 
 export interface Task {
@@ -39,6 +40,8 @@ export interface Task {
   description?: string;
   dueDate?: string;
   questions?: QuizQuestion[];
+  content?: string;
+  videoUrl?: string;
 }
 
 export interface QuizQuestion {
@@ -53,4 +56,24 @@ export interface ChatMessage {
   content: string;
   role: 'user' | 'assistant';
   timestamp: Date;
+}
+
+export interface CompletedModule {
+  id: string;
+  courseId: string;
+  moduleId: string;
+  title: string;
+  completedDate: string;
+  grade?: number;
+}
+
+export interface UserSetting {
+  id: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+  type: 'toggle' | 'select' | 'input';
+  options?: string[];
+  value?: string;
+  category: 'appearance' | 'notifications' | 'privacy' | 'account';
 }

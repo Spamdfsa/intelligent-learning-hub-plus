@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { mockCourses } from "@/data/mockData";
 import { Course, Module, Task, User } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -13,13 +13,19 @@ import {
   AccordionItem, 
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CheckCircle, Clock, FileText, MessageCircle, PlayCircle, User as UserIcon, Video } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const CourseDetail = () => {
   const { courseId } = useParams();
+  const navigate = useNavigate();
   const [course, setCourse] = useState<Course | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState("modules");
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [showMaterial, setShowMaterial] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Find the course
@@ -34,6 +40,20 @@ const CourseDetail = () => {
       setUser(JSON.parse(storedUser));
     }
   }, [courseId]);
+
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task);
+    setShowMaterial(true);
+    
+    // Mark as completed if not already
+    if (!task.completed && user?.role === "student") {
+      task.completed = true;
+      toast({
+        title: "Fortschritt gespeichert",
+        description: `${task.title} wurde als abgeschlossen markiert.`,
+      });
+    }
+  };
 
   if (!course) {
     return (
@@ -55,6 +75,83 @@ const CourseDetail = () => {
         return <FileText className="h-5 w-5" />;
       default:
         return null;
+    }
+  };
+
+  const renderTaskContent = () => {
+    if (!selectedTask) return null;
+
+    switch (selectedTask.type) {
+      case "reading":
+        return (
+          <div className="prose prose-sm max-w-none">
+            <div dangerouslySetInnerHTML={{ __html: selectedTask.content || "<p>Keine Inhalte verfügbar</p>" }} />
+          </div>
+        );
+      case "video":
+        return (
+          <div className="space-y-4">
+            <div className="relative aspect-video bg-muted rounded-md overflow-hidden">
+              {selectedTask.videoUrl ? (
+                <iframe 
+                  src={selectedTask.videoUrl} 
+                  className="absolute inset-0 w-full h-full" 
+                  frameBorder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                  allowFullScreen
+                ></iframe>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <PlayCircle className="h-12 w-12 text-muted-foreground" />
+                  <p className="text-muted-foreground">Video nicht verfügbar</p>
+                </div>
+              )}
+            </div>
+            {selectedTask.description && (
+              <div className="prose prose-sm max-w-none">
+                <p>{selectedTask.description}</p>
+              </div>
+            )}
+          </div>
+        );
+      case "quiz":
+        return (
+          <div className="space-y-6">
+            {selectedTask.questions?.map((question, index) => (
+              <div key={question.id} className="space-y-3">
+                <h3 className="font-medium">Frage {index + 1}: {question.question}</h3>
+                <div className="space-y-2">
+                  {question.options.map((option, optIdx) => (
+                    <div key={optIdx} className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted/50">
+                      <input 
+                        type="radio" 
+                        name={`question-${question.id}`} 
+                        id={`question-${question.id}-option-${optIdx}`} 
+                      />
+                      <label htmlFor={`question-${question.id}-option-${optIdx}`}>
+                        {option}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <Button className="w-full">Antworten einreichen</Button>
+          </div>
+        );
+      case "assignment":
+        return (
+          <div className="space-y-4">
+            <div className="prose prose-sm max-w-none">
+              <div dangerouslySetInnerHTML={{ __html: selectedTask.content || "<p>Keine Inhalte verfügbar</p>" }} />
+            </div>
+            <div className="border-t pt-4">
+              <Button>Aufgabe einreichen</Button>
+            </div>
+          </div>
+        );
+      default:
+        return <p>Inhalt nicht verfügbar</p>;
     }
   };
 
@@ -144,6 +241,7 @@ const CourseDetail = () => {
                         <Button 
                           variant={task.completed ? "outline" : "secondary"} 
                           size="sm"
+                          onClick={() => handleTaskClick(task)}
                         >
                           {task.completed ? "Wiederholen" : "Starten"}
                         </Button>
@@ -241,6 +339,21 @@ const CourseDetail = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={showMaterial} onOpenChange={setShowMaterial}>
+        <DialogContent className="max-w-3xl">
+          {selectedTask && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{selectedTask.title}</DialogTitle>
+              </DialogHeader>
+              <div className="mt-4">
+                {renderTaskContent()}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
