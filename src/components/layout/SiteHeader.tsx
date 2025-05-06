@@ -14,10 +14,26 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { mockCourses } from "@/data/mockData";
 
 const SiteHeader = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("lms-user");
@@ -41,6 +57,11 @@ const SiteHeader = () => {
       .toUpperCase();
   };
 
+  const handleSearch = (courseId: string) => {
+    setSearchOpen(false);
+    navigate(`/courses/${courseId}`);
+  };
+
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur">
       <div className="container flex h-16 items-center justify-between">
@@ -53,12 +74,51 @@ const SiteHeader = () => {
 
         <div className="hidden md:flex md:w-1/3 lg:w-1/4">
           <div className="relative w-full">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Kurse durchsuchen..."
-              className="w-full pl-9 rounded-full"
-            />
+            <Popover open={searchOpen} onOpenChange={setSearchOpen}>
+              <PopoverTrigger asChild>
+                <div className="relative w-full">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="Kurse durchsuchen..."
+                    className="w-full pl-9 rounded-full"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onClick={() => setSearchOpen(true)}
+                  />
+                </div>
+              </PopoverTrigger>
+              <PopoverContent className="p-0 w-[400px]" align="end">
+                <Command>
+                  <CommandInput 
+                    placeholder="Nach Kursen suchen..." 
+                    value={searchTerm}
+                    onValueChange={setSearchTerm}
+                  />
+                  <CommandList>
+                    <CommandEmpty>Keine Kurse gefunden</CommandEmpty>
+                    <CommandGroup heading="Kurse">
+                      {mockCourses
+                        .filter(course => 
+                          course.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          course.description.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                        .slice(0, 5)
+                        .map(course => (
+                          <CommandItem 
+                            key={course.id} 
+                            value={course.title}
+                            onSelect={() => handleSearch(course.id)}
+                          >
+                            {course.title}
+                          </CommandItem>
+                        ))
+                      }
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 

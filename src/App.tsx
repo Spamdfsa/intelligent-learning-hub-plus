@@ -14,6 +14,9 @@ import TasksPage from "./pages/Tasks";
 import SummariesPage from "./pages/Summaries";
 import ModulesPage from "./pages/Modules";
 import SettingsPage from "./pages/Settings";
+import ProfilePage from "./pages/Profile";
+import DeadlinesPage from "./pages/Deadlines";
+import ProgressPage from "./pages/Progress";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,11 +40,13 @@ const App = () => (
             <Route path="/tasks" element={<TasksPage />} />
             <Route path="/modules" element={<ModulesPage />} />
             <Route path="/summaries" element={<SummariesPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/deadlines" element={<DeadlinesPage />} />
+            <Route path="/progress" element={<ProgressPage />} />
             <Route path="/assignments" element={<Dashboard />} />
             <Route path="/students" element={<Dashboard />} />
             <Route path="/users" element={<Dashboard />} />
             <Route path="/analytics" element={<Dashboard />} />
-            <Route path="/profile" element={<Dashboard />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />

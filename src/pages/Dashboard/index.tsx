@@ -68,8 +68,8 @@ const Dashboard = () => {
     return [
       { title: "Belegte Kurse", value: "4", icon: <BookOpen className="h-4 w-4" />, path: "/courses" },
       { title: "Abgeschlossene Module", value: "8", icon: <GraduationCap className="h-4 w-4" />, path: "/modules" },
-      { title: "Nächste Deadline", value: "2 Tage", icon: <Clock className="h-4 w-4" />, path: "/tasks" },
-      { title: "Gesamtfortschritt", value: "65%", icon: <BarChart className="h-4 w-4" />, path: null },
+      { title: "Nächste Deadline", value: "2 Tage", icon: <Clock className="h-4 w-4" />, path: "/deadlines" },
+      { title: "Gesamtfortschritt", value: "65%", icon: <BarChart className="h-4 w-4" />, path: "/progress" },
     ];
   };
 
@@ -106,7 +106,11 @@ const Dashboard = () => {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {getStatistics().map((stat, index) => (
-          <Card key={index} className="cursor-pointer hover:shadow-md transition-all" onClick={() => stat.path && navigate(stat.path)}>
+          <Card 
+            key={index} 
+            className="cursor-pointer hover:shadow-md transition-all" 
+            onClick={() => stat.path && navigate(stat.path)}
+          >
             <CardContent className="p-6 flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
@@ -176,50 +180,56 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="rounded-lg border bg-card p-3">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium">
-                    {user?.role === "student" 
-                      ? "Quiz: Machine Learning Grundlagen" 
-                      : user?.role === "teacher" 
-                        ? "Bewertung: Python Hausaufgaben" 
-                        : "System Update: Bewertungsrubrik"}
-                  </p>
-                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                    In 2 Tagen
-                  </span>
+              <Link to="/deadlines" className="block">
+                <div className="rounded-lg border bg-card p-3 hover:bg-muted">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">
+                      {user?.role === "student" 
+                        ? "Quiz: Machine Learning Grundlagen" 
+                        : user?.role === "teacher" 
+                          ? "Bewertung: Python Hausaufgaben" 
+                          : "System Update: Bewertungsrubrik"}
+                    </p>
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                      In 2 Tagen
+                    </span>
+                  </div>
                 </div>
-              </div>
+              </Link>
               
-              <div className="rounded-lg border bg-card p-3">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium">
-                    {user?.role === "student" 
-                      ? "Abgabe: Datenbankdesign" 
-                      : user?.role === "teacher" 
-                        ? "Kursplanung: Nächstes Semester" 
-                        : "Review: Neue Lehrkräfte"}
-                  </p>
-                  <span className="text-xs bg-amber-500/10 text-amber-500 px-2 py-1 rounded-full">
-                    In 5 Tagen
-                  </span>
+              <Link to="/deadlines" className="block">
+                <div className="rounded-lg border bg-card p-3 hover:bg-muted">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">
+                      {user?.role === "student" 
+                        ? "Abgabe: Datenbankdesign" 
+                        : user?.role === "teacher" 
+                          ? "Kursplanung: Nächstes Semester" 
+                          : "Review: Neue Lehrkräfte"}
+                    </p>
+                    <span className="text-xs bg-amber-500/10 text-amber-500 px-2 py-1 rounded-full">
+                      In 5 Tagen
+                    </span>
+                  </div>
                 </div>
-              </div>
+              </Link>
               
-              <div className="rounded-lg border bg-card p-3">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium">
-                    {user?.role === "student" 
-                      ? "Gruppenarbeit: Präsentation" 
-                      : user?.role === "teacher" 
-                        ? "Feedback: Semesterprojekte" 
-                        : "Report: Semesterfortschritt"}
-                  </p>
-                  <span className="text-xs bg-emerald-500/10 text-emerald-500 px-2 py-1 rounded-full">
-                    In 1 Woche
-                  </span>
+              <Link to="/deadlines" className="block">
+                <div className="rounded-lg border bg-card p-3 hover:bg-muted">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">
+                      {user?.role === "student" 
+                        ? "Gruppenarbeit: Präsentation" 
+                        : user?.role === "teacher" 
+                          ? "Feedback: Semesterprojekte" 
+                          : "Report: Semesterfortschritt"}
+                    </p>
+                    <span className="text-xs bg-emerald-500/10 text-emerald-500 px-2 py-1 rounded-full">
+                      In 1 Woche
+                    </span>
+                  </div>
                 </div>
-              </div>
+              </Link>
               
               <Button variant="outline" className="w-full" asChild>
                 <Link to="/tasks">Alle Aufgaben anzeigen</Link>

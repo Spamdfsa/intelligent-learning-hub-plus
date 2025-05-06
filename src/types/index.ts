@@ -7,6 +7,8 @@ export interface User {
   email: string;
   role: UserRole;
   avatar?: string;
+  bio?: string;
+  birthDate?: string;
 }
 
 export interface Course {
@@ -42,6 +44,8 @@ export interface Task {
   questions?: QuizQuestion[];
   content?: string;
   videoUrl?: string;
+  courseId?: string;
+  moduleId?: string;
 }
 
 export interface QuizQuestion {
