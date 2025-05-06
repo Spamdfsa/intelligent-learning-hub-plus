@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { User, UserRole } from "@/types";
-import { BookOpen, GraduationCap, LayoutDashboard, Users, Settings, BookCheck, BarChart, MessageSquare } from "lucide-react";
+import { BookOpen, GraduationCap, LayoutDashboard, Users, Settings, BookCheck, BarChart, MessageSquare, FileText } from "lucide-react";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -40,6 +40,7 @@ export function Sidebar({ className, ...props }: SidebarProps) {
     { title: "Meine Kurse", href: "/courses", icon: <BookOpen className="h-5 w-5" /> },
     { title: "Aufgaben", href: "/tasks", icon: <BookCheck className="h-5 w-5" /> },
     { title: "KI-Tutor", href: "/ai-tutor", icon: <MessageSquare className="h-5 w-5" /> },
+    { title: "Zusammenfassungen", href: "/summaries", icon: <FileText className="h-5 w-5" /> },
     { title: "Einstellungen", href: "/settings", icon: <Settings className="h-5 w-5" /> },
   ];
 

@@ -10,6 +10,8 @@ import Dashboard from "./pages/Dashboard";
 import CoursesPage from "./pages/Courses";
 import CourseDetail from "./pages/Courses/CourseDetail";
 import AiTutor from "./pages/AiTutor";
+import TasksPage from "./pages/Tasks";
+import SummariesPage from "./pages/Summaries";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,7 +32,8 @@ const App = () => (
             <Route path="/courses/manage" element={<CoursesPage />} />
             <Route path="/courses/:courseId" element={<CourseDetail />} />
             <Route path="/ai-tutor" element={<AiTutor />} />
-            <Route path="/tasks" element={<Dashboard />} />
+            <Route path="/tasks" element={<TasksPage />} />
+            <Route path="/summaries" element={<SummariesPage />} />
             <Route path="/assignments" element={<Dashboard />} />
             <Route path="/students" element={<Dashboard />} />
             <Route path="/users" element={<Dashboard />} />
