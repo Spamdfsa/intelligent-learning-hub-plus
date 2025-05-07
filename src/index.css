@@ -87,8 +87,9 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
 
-    /* Erhöhter Kontrast für Eingabefelder im Dark Mode */
-    --input-text: 0 0% 90%;
+    /* Improved contrast for form inputs in dark mode */
+    --input-background: 222.2 47.4% 11.2%; 
+    --input-text: 0 0% 95%;
 
     --sidebar-background: 222.2 84% 4.9%;
     --sidebar-foreground: 210 40% 98%;
@@ -151,6 +152,28 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  /* Improve dark mode form elements */
+  .dark input,
+  .dark textarea,
+  .dark select,
+  .dark [role="combobox"] {
+    @apply bg-secondary text-foreground border-secondary;
+  }
+  
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    @apply text-muted-foreground;
+  }
+  
+  .dark select option {
+    @apply bg-secondary text-foreground;
+  }
+  
+  /* Improve selection color in dark mode */
+  .dark ::selection {
+    @apply bg-primary/30 text-foreground;
   }
 }
 
