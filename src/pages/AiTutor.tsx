@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChatMessage } from "@/types";
-import { Send, Bot, Loader2, Check, ArrowRight } from "lucide-react";
+import { Send, Bot, Loader2, Check, ArrowRight, Key } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface GeneratedContent {
   id: string;
@@ -36,9 +38,39 @@ const AiTutor = () => {
   const [difficulty, setDifficulty] = useState("Mittel");
   const [summaryStyle, setSummaryStyle] = useState("Kurz und prägnant");
   const [moduleSelection, setModuleSelection] = useState("Alle Module");
+  const [apiKey, setApiKey] = useState("");
+  const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
   
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if API key is stored in localStorage
+    const storedApiKey = localStorage.getItem("openai-api-key");
+    if (storedApiKey) {
+      setApiKey(storedApiKey);
+    } else {
+      // Show dialog to enter API key if not found
+      setShowApiKeyDialog(true);
+    }
+  }, []);
+
+  const handleSaveApiKey = () => {
+    if (apiKey.trim()) {
+      localStorage.setItem("openai-api-key", apiKey.trim());
+      setShowApiKeyDialog(false);
+      toast({
+        title: "API-Schlüssel gespeichert",
+        description: "Der OpenAI API-Schlüssel wurde erfolgreich gespeichert.",
+      });
+    } else {
+      toast({
+        title: "Fehler",
+        description: "Bitte gib einen gültigen API-Schlüssel ein.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +89,64 @@ const AiTutor = () => {
     setIsLoading(true);
     
     try {
-      // In einem realen Projekt würden wir hier eine API-Anfrage an einen KI-Dienst senden
+      if (!apiKey) {
+        setShowApiKeyDialog(true);
+        throw new Error("API-Schlüssel fehlt");
+      }
+
+      // Call OpenAI API
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: "gpt-3.5-turbo",
+          messages: [
+            {
+              role: "system",
+              content: "Du bist ein hilfreicher KI-Tutor, der Studierende in ihrem Lernprozess unterstützt. Antworte kurz, informativ und freundlich auf Deutsch."
+            },
+            ...messages.map(msg => ({
+              role: msg.role,
+              content: msg.content
+            })),
+            {
+              role: "user",
+              content: input
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 500
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || "Fehler bei der Kommunikation mit OpenAI");
+      }
+
+      const result = await response.json();
+      const aiResponse = result.choices[0]?.message?.content || "Es tut mir leid, ich konnte keine Antwort generieren.";
+      
+      const aiMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        content: aiResponse,
+        role: "assistant",
+        timestamp: new Date(),
+      };
+      
+      setMessages((prev) => [...prev, aiMessage]);
+    } catch (error) {
+      console.error("ChatGPT API Error:", error);
+      toast({
+        title: "Fehler",
+        description: error instanceof Error ? error.message : "Es gab ein Problem bei der Kommunikation mit dem KI-Tutor.",
+        variant: "destructive",
+      });
+
+      // Fallback to simulated response if API fails
       setTimeout(() => {
         const botResponses = [
           "Gute Frage! Lass mich das erklären...",
@@ -77,27 +166,58 @@ const AiTutor = () => {
         };
         
         setMessages((prev) => [...prev, aiMessage]);
-        setIsLoading(false);
-      }, 1500);
-    } catch (error) {
-      toast({
-        title: "Fehler",
-        description: "Es gab ein Problem bei der Kommunikation mit dem KI-Tutor.",
-        variant: "destructive",
-      });
+      }, 500);
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGenerateQuiz = () => {
+  const handleGenerateQuiz = async () => {
     setIsLoading(true);
     
-    // Simuliere Quiz-Generierung
-    setTimeout(() => {
-      const quizContent = generateMockQuiz(courseSelection, parseInt(questionCount), difficulty);
+    try {
+      if (!apiKey) {
+        setShowApiKeyDialog(true);
+        throw new Error("API-Schlüssel fehlt");
+      }
+
+      // Call OpenAI API to generate quiz
+      const prompt = `Erstelle ein Quiz zum Thema "${courseSelection}" mit ${questionCount} Fragen im Schwierigkeitsgrad "${difficulty}". Formatiere die Ausgabe so, dass jede Frage deutlich nummeriert ist.`;
       
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: "gpt-3.5-turbo",
+          messages: [
+            {
+              role: "system",
+              content: "Du bist ein Bildungsexperte, der hochwertige Lernmaterialien erstellt. Erstelle ein Quiz im angegebenen Format."
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || "Fehler bei der Kommunikation mit OpenAI");
+      }
+
+      const result = await response.json();
+      const quizContent = result.choices[0]?.message?.content || "Es konnten keine Quiz-Fragen generiert werden.";
+      
+      const quizId = uuidv4();
       setGeneratedContent({
-        id: uuidv4(),
+        id: quizId,
         title: `Quiz: ${courseSelection}`,
         content: quizContent,
         timestamp: new Date(),
@@ -105,7 +225,7 @@ const AiTutor = () => {
       });
 
       saveToTasks({
-        id: uuidv4(),
+        id: quizId,
         title: `Quiz: ${courseSelection}`,
         description: quizContent,
         course: courseSelection,
@@ -120,45 +240,119 @@ const AiTutor = () => {
         title: "Quiz generiert",
         description: "Ein neues Quiz wurde basierend auf deinen Kursinhalten erstellt und zu deinen Aufgaben hinzugefügt.",
       });
+    } catch (error) {
+      console.error("OpenAI API Error:", error);
+      toast({
+        title: "Fehler",
+        description: error instanceof Error ? error.message : "Es gab ein Problem bei der Generierung des Quiz.",
+        variant: "destructive",
+      });
       
-      setIsLoading(false);
-    }, 2000);
-  };
-
-  const handleGenerateSummary = () => {
-    setIsLoading(true);
-    
-    // Simuliere Zusammenfassungs-Generierung
-    setTimeout(() => {
-      const summaryContent = generateMockSummary(courseSelection, moduleSelection, summaryStyle);
-      
+      // Fallback to mock quiz if API fails
+      const mockQuizContent = generateMockQuiz(courseSelection, parseInt(questionCount), difficulty);
       setGeneratedContent({
         id: uuidv4(),
+        title: `Quiz: ${courseSelection}`,
+        content: mockQuizContent,
+        timestamp: new Date(),
+        type: "quiz"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGenerateSummary = async () => {
+    setIsLoading(true);
+    
+    try {
+      if (!apiKey) {
+        setShowApiKeyDialog(true);
+        throw new Error("API-Schlüssel fehlt");
+      }
+
+      // Call OpenAI API to generate summary
+      const prompt = `Erstelle eine ${summaryStyle} Zusammenfassung zum Thema "${courseSelection}" ${moduleSelection !== "Alle Module" ? `für das ${moduleSelection}` : ""}.`;
+      
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: "gpt-3.5-turbo",
+          messages: [
+            {
+              role: "system",
+              content: "Du bist ein Bildungsexperte, der präzise und verständliche Zusammenfassungen erstellt. Formatiere die Ausgabe mit Markdown für bessere Lesbarkeit."
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 1500
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || "Fehler bei der Kommunikation mit OpenAI");
+      }
+
+      const result = await response.json();
+      const summaryContent = result.choices[0]?.message?.content || "Es konnte keine Zusammenfassung generiert werden.";
+      
+      const summaryId = uuidv4();
+      const summary = {
+        id: summaryId,
+        title: `Zusammenfassung: ${courseSelection} - ${moduleSelection}`,
+        content: summaryContent,
+        course: courseSelection,
+        module: moduleSelection,
+        createdAt: new Date()
+      };
+      
+      // Save to summaries collection in localStorage
+      const storedSummaries = localStorage.getItem("lms-summaries");
+      const summaries = storedSummaries ? JSON.parse(storedSummaries) : [];
+      summaries.push(summary);
+      localStorage.setItem("lms-summaries", JSON.stringify(summaries));
+      
+      setGeneratedContent({
+        id: summaryId,
         title: `Zusammenfassung: ${courseSelection} - ${moduleSelection}`,
         content: summaryContent,
         timestamp: new Date(),
         type: "summary"
       });
-
-      saveToTasks({
-        id: uuidv4(),
-        title: `Zusammenfassung: ${courseSelection}`,
-        description: `Erstellen Sie anhand dieser Zusammenfassung ein Mindmap oder eine strukturierte Übersicht der wichtigsten Konzepte:\n\n${summaryContent}`,
-        course: courseSelection,
-        dueDate: getRandomDueDate(),
-        status: "pending",
-        type: "summary",
-        createdAt: new Date(),
-        generatedBy: "ai"
-      });
       
       toast({
         title: "Zusammenfassung generiert",
-        description: "Eine Zusammenfassung deiner Kursunterlagen wurde erstellt und zu deinen Aufgaben hinzugefügt.",
+        description: "Eine Zusammenfassung deiner Kursunterlagen wurde erstellt und kann in der Zusammenfassungen-Sektion angesehen werden.",
+      });
+    } catch (error) {
+      console.error("OpenAI API Error:", error);
+      toast({
+        title: "Fehler",
+        description: error instanceof Error ? error.message : "Es gab ein Problem bei der Generierung der Zusammenfassung.",
+        variant: "destructive",
       });
       
+      // Fallback to mock summary if API fails
+      const mockSummaryContent = generateMockSummary(courseSelection, moduleSelection, summaryStyle);
+      setGeneratedContent({
+        id: uuidv4(),
+        title: `Zusammenfassung: ${courseSelection} - ${moduleSelection}`,
+        content: mockSummaryContent,
+        timestamp: new Date(),
+        type: "summary"
+      });
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   const saveToTasks = (newTask: any) => {
@@ -226,6 +420,10 @@ const AiTutor = () => {
     return summaries[Math.floor(Math.random() * summaries.length)];
   };
   
+  const handleNavigateToSummaries = () => {
+    navigate("/summaries");
+  };
+
   const handleNavigateToTasks = () => {
     navigate("/tasks");
   };
@@ -237,6 +435,41 @@ const AiTutor = () => {
         Stell Fragen zu deinen Kursinhalten, generiere Quizfragen oder lass dir bei Aufgaben helfen.
       </p>
 
+      {/* API Key Dialog */}
+      <Dialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>OpenAI API-Schlüssel eingeben</DialogTitle>
+            <DialogDescription>
+              Um den KI-Tutor zu nutzen, benötigen wir deinen OpenAI API-Schlüssel. Der Schlüssel wird lokal in deinem Browser gespeichert.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="flex items-center gap-2">
+              <Key className="h-4 w-4 text-muted-foreground" />
+              <Input
+                type="password"
+                placeholder="sk-..."
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Deinen API-Schlüssel findest du in deinem OpenAI-Konto unter <a href="https://platform.openai.com/account/api-keys" target="_blank" rel="noopener noreferrer" className="underline">platform.openai.com/account/api-keys</a>.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowApiKeyDialog(false)}>
+              Abbrechen
+            </Button>
+            <Button onClick={handleSaveApiKey}>
+              Speichern und fortfahren
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Main Tabs */}
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="chat">Chat mit KI-Tutor</TabsTrigger>
@@ -465,7 +698,7 @@ const AiTutor = () => {
                       <Check className="mr-2 h-5 w-5 text-green-600" />
                       Zusammenfassung erfolgreich erstellt
                     </CardTitle>
-                    <p className="text-sm text-green-700">Die Zusammenfassung wurde zu deinen Aufgaben hinzugefügt.</p>
+                    <p className="text-sm text-green-700">Die Zusammenfassung wurde zu deinen Zusammenfassungen hinzugefügt.</p>
                   </div>
                 </div>
               </CardHeader>
@@ -476,11 +709,11 @@ const AiTutor = () => {
                   </div>
                 </div>
                 <Button 
-                  onClick={handleNavigateToTasks}
+                  onClick={handleNavigateToSummaries}
                   variant="outline" 
                   className="w-full border-green-300 text-green-700 hover:bg-green-100"
                 >
-                  Zu meinen Aufgaben gehen
+                  Zu meinen Zusammenfassungen gehen
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardContent>

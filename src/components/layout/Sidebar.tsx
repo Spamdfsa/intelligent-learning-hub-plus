@@ -54,8 +54,8 @@ export function Sidebar({ className, ...props }: SidebarProps) {
     { title: "Deadlines", href: "/deadlines", icon: <Calendar className="h-5 w-5" /> },
     { title: "Lernfortschritt", href: "/progress", icon: <BarChart className="h-5 w-5" /> },
     { title: "Abgeschlossene Module", href: "/modules", icon: <GraduationCap className="h-5 w-5" /> },
-    { title: "KI-Tutor", href: "/ai-tutor", icon: <MessageSquare className="h-5 w-5" /> },
     { title: "Zusammenfassungen", href: "/summaries", icon: <FileText className="h-5 w-5" /> },
+    { title: "KI-Tutor", href: "/ai-tutor", icon: <MessageSquare className="h-5 w-5" /> },
     { title: "Profil", href: "/profile", icon: <UserIcon className="h-5 w-5" /> },
     { title: "Einstellungen", href: "/settings", icon: <Settings className="h-5 w-5" /> },
   ];

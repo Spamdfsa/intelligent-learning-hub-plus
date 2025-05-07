@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, BookOpen, Calendar } from "lucide-react";
+import { Search, BookOpen, Calendar, Download } from "lucide-react";
 
 interface Summary {
   id: string;
@@ -20,54 +20,49 @@ const SummariesPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    // Hier würden wir normalerweise die Zusammenfassungen aus einer Datenbank laden
-    // Für die Demo verwenden wir simulierte Daten
-    const mockSummaries = [
-      {
-        id: "1",
-        title: "Grundlagen der Informatik",
-        content: `# Grundlagen der Informatik\n\nDie Informatik befasst sich mit der automatischen Verarbeitung von Informationen. Sie umfasst sowohl theoretische als auch praktische Aspekte der Datenverarbeitung. Zentrale Konzepte sind Algorithmen (Verfahren zur Lösung von Problemen), Datenstrukturen (Organisationsformen für Daten) und Programmiersprachen (formale Sprachen zur Formulierung von Algorithmen).\n\nWichtige Teilgebiete:\n- Theoretische Informatik: Automatentheorie, Berechenbarkeitstheorie, Komplexitätstheorie\n- Praktische Informatik: Programmierung, Softwareentwicklung, Datenbanken\n- Technische Informatik: Rechnerarchitektur, Betriebssysteme, Netzwerke\n\nDie Bedeutung der Informatik erstreckt sich heute auf nahezu alle Lebensbereiche, von der Kommunikation über die Medizin bis hin zur Wirtschaft.`,
-        course: "Einführung in die Informatik",
-        createdAt: new Date(2025, 3, 15),
-        module: "Modul 1: Grundlagen"
-      },
-      {
-        id: "2",
-        title: "Objektorientierte Programmierung",
-        content: `# Objektorientierte Programmierung\n\nDie objektorientierte Programmierung (OOP) ist ein Programmierparadigma, das auf dem Konzept von "Objekten" basiert, die Daten und Verhalten kombinieren. Die Grundprinzipien der OOP sind:\n\n1. **Kapselung**: Daten und Methoden werden in Objekten zusammengefasst, wobei der interne Zustand vor externem Zugriff geschützt ist.\n\n2. **Vererbung**: Neue Klassen können von vorhandenen Klassen abgeleitet werden und deren Eigenschaften und Methoden erben.\n\n3. **Polymorphismus**: Objekte können in verschiedenen Formen auftreten, abhängig vom Kontext.\n\n4. **Abstraktion**: Komplexe Details werden verborgen, und nur relevante Funktionen werden nach außen zugänglich gemacht.\n\nBeispiele für objektorientierte Programmiersprachen sind Java, C++, Python und C#.`,
-        course: "Einführung in die Informatik",
-        createdAt: new Date(2025, 3, 20),
-        module: "Modul 2: Fortgeschrittene Konzepte"
-      },
-      {
-        id: "3",
-        title: "Relationale Datenbanken",
-        content: `# Relationale Datenbanken\n\nRelationale Datenbanken organisieren Daten in Tabellen (Relationen) mit Zeilen und Spalten. Jede Zeile repräsentiert einen Datensatz, und jede Spalte repräsentiert ein Attribut des Datensatzes. Die Structured Query Language (SQL) dient zur Verwaltung und Abfrage relationaler Datenbanken.\n\nSchlüsselkonzepte:\n\n1. **Primärschlüssel**: Ein eindeutiger Identifikator für jeden Datensatz.\n\n2. **Fremdschlüssel**: Ein Feld, das auf einen Primärschlüssel in einer anderen Tabelle verweist und so Beziehungen zwischen Tabellen herstellt.\n\n3. **Normalisierung**: Ein Prozess zur Minimierung von Datenredundanz und Verbesserung der Datenintegrität.\n\n4. **Transaktionen**: Eine Folge von Datenbankoperationen, die als eine Einheit betrachtet werden.\n\nBeispiele für relationale Datenbankmanagementsysteme sind MySQL, PostgreSQL, Oracle und Microsoft SQL Server.`,
-        course: "Datenbanksysteme",
-        createdAt: new Date(2025, 4, 5),
-        module: "Modul 1: Grundlagen"
-      }
-    ];
-
-    // Füge Zusammenfassungen aus localStorage hinzu
-    const tasksString = localStorage.getItem("lms-tasks");
-    if (tasksString) {
-      const tasks = JSON.parse(tasksString);
-      const summaryTasks = tasks.filter((task: any) => task.type === "summary");
-      
-      const additionalSummaries = summaryTasks.map((task: any) => ({
-        id: task.id,
-        title: task.title,
-        content: task.description.replace("Erstellen Sie anhand dieser Zusammenfassung ein Mindmap oder eine strukturierte Übersicht der wichtigsten Konzepte:\n\n", ""),
-        course: task.course,
-        createdAt: new Date(task.createdAt),
-        module: task.module || "Alle Module"
-      }));
-      
-      setSummaries([...mockSummaries, ...additionalSummaries]);
-    } else {
-      setSummaries(mockSummaries);
+    // Get summaries from localStorage
+    const storedSummaries = localStorage.getItem("lms-summaries");
+    let loadedSummaries: Summary[] = [];
+    
+    if (storedSummaries) {
+      loadedSummaries = JSON.parse(storedSummaries);
     }
+    
+    // Add mock summaries only if no summaries exist
+    if (loadedSummaries.length === 0) {
+      const mockSummaries = [
+        {
+          id: "1",
+          title: "Grundlagen der Informatik",
+          content: `# Grundlagen der Informatik\n\nDie Informatik befasst sich mit der automatischen Verarbeitung von Informationen. Sie umfasst sowohl theoretische als auch praktische Aspekte der Datenverarbeitung. Zentrale Konzepte sind Algorithmen (Verfahren zur Lösung von Problemen), Datenstrukturen (Organisationsformen für Daten) und Programmiersprachen (formale Sprachen zur Formulierung von Algorithmen).\n\nWichtige Teilgebiete:\n- Theoretische Informatik: Automatentheorie, Berechenbarkeitstheorie, Komplexitätstheorie\n- Praktische Informatik: Programmierung, Softwareentwicklung, Datenbanken\n- Technische Informatik: Rechnerarchitektur, Betriebssysteme, Netzwerke\n\nDie Bedeutung der Informatik erstreckt sich heute auf nahezu alle Lebensbereiche, von der Kommunikation über die Medizin bis hin zur Wirtschaft.`,
+          course: "Einführung in die Informatik",
+          createdAt: new Date(2025, 3, 15),
+          module: "Modul 1: Grundlagen"
+        },
+        {
+          id: "2",
+          title: "Objektorientierte Programmierung",
+          content: `# Objektorientierte Programmierung\n\nDie objektorientierte Programmierung (OOP) ist ein Programmierparadigma, das auf dem Konzept von "Objekten" basiert, die Daten und Verhalten kombinieren. Die Grundprinzipien der OOP sind:\n\n1. **Kapselung**: Daten und Methoden werden in Objekten zusammengefasst, wobei der interne Zustand vor externem Zugriff geschützt ist.\n\n2. **Vererbung**: Neue Klassen können von vorhandenen Klassen abgeleitet werden und deren Eigenschaften und Methoden erben.\n\n3. **Polymorphismus**: Objekte können in verschiedenen Formen auftreten, abhängig vom Kontext.\n\n4. **Abstraktion**: Komplexe Details werden verborgen, und nur relevante Funktionen werden nach außen zugänglich gemacht.\n\nBeispiele für objektorientierte Programmiersprachen sind Java, C++, Python und C#.`,
+          course: "Einführung in die Informatik",
+          createdAt: new Date(2025, 3, 20),
+          module: "Modul 2: Fortgeschrittene Konzepte"
+        },
+        {
+          id: "3",
+          title: "Relationale Datenbanken",
+          content: `# Relationale Datenbanken\n\nRelationale Datenbanken organisieren Daten in Tabellen (Relationen) mit Zeilen und Spalten. Jede Zeile repräsentiert einen Datensatz, und jede Spalte repräsentiert ein Attribut des Datensatzes. Die Structured Query Language (SQL) dient zur Verwaltung und Abfrage relationaler Datenbanken.\n\nSchlüsselkonzepte:\n\n1. **Primärschlüssel**: Ein eindeutiger Identifikator für jeden Datensatz.\n\n2. **Fremdschlüssel**: Ein Feld, das auf einen Primärschlüssel in einer anderen Tabelle verweist und so Beziehungen zwischen Tabellen herstellt.\n\n3. **Normalisierung**: Ein Prozess zur Minimierung von Datenredundanz und Verbesserung der Datenintegrität.\n\n4. **Transaktionen**: Eine Folge von Datenbankoperationen, die als eine Einheit betrachtet werden.\n\nBeispiele für relationale Datenbankmanagementsysteme sind MySQL, PostgreSQL, Oracle und Microsoft SQL Server.`,
+          course: "Datenbanksysteme",
+          createdAt: new Date(2025, 4, 5),
+          module: "Modul 1: Grundlagen"
+        }
+      ];
+      
+      loadedSummaries = mockSummaries;
+      // Store mock summaries
+      localStorage.setItem("lms-summaries", JSON.stringify(mockSummaries));
+    }
+    
+    setSummaries(loadedSummaries);
   }, []);
 
   const filteredSummaries = summaries.filter(summary => 
@@ -83,6 +78,11 @@ const SummariesPage = () => {
       month: '2-digit',
       year: 'numeric'
     });
+  };
+
+  const handleDownloadPDF = (summary: Summary) => {
+    // In a real application, this would generate and download a PDF
+    alert(`PDF für "${summary.title}" würde jetzt heruntergeladen werden.`);
   };
 
   return (
@@ -168,7 +168,8 @@ const SummariesPage = () => {
               <Button variant="outline" onClick={() => setActiveSummary(null)}>
                 Schließen
               </Button>
-              <Button>
+              <Button onClick={() => handleDownloadPDF(activeSummary)}>
+                <Download className="mr-2 h-4 w-4" />
                 Als PDF herunterladen
               </Button>
             </div>
