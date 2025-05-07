@@ -16,6 +16,7 @@ import {
   User as UserIcon,
   Users 
 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -68,32 +69,36 @@ export function Sidebar({ className, ...props }: SidebarProps) {
       : studentNavItems;
 
   return (
-    <aside className={cn("pb-12 w-64 border-r", className)} {...props}>
-      <div className="space-y-4 py-4">
+    <aside className={cn("pb-12 w-64 border-r h-screen flex flex-col", className)} {...props}>
+      <div className="py-4 flex flex-col h-full">
         <div className="px-4 py-2">
           <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">
             Navigation
           </h2>
-          <div className="space-y-1">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.href}
-                to={item.href}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  )
-                }
-              >
-                {item.icon}
-                {item.title}
-              </NavLink>
-            ))}
-          </div>
         </div>
+        <ScrollArea className="flex-1">
+          <div className="px-4 py-2">
+            <div className="space-y-1">
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.href}
+                  to={item.href}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
+                      isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    )
+                  }
+                >
+                  {item.icon}
+                  {item.title}
+                </NavLink>
+              ))}
+            </div>
+          </div>
+        </ScrollArea>
       </div>
     </aside>
   );

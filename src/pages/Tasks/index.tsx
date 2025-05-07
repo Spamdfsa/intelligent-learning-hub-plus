@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -94,9 +93,8 @@ const TasksPage = () => {
           throw new Error("Aufgabe nicht gefunden");
         }
         
-        // Simuliere KI-Bewertung
-        const feedback = generateAIFeedback(studentAnswer, task);
-        const grade = generateAIGrade(studentAnswer, task);
+        // Simuliere KI-Bewertung mit objektiven Kriterien
+        const { feedback, grade } = evaluateAnswer(studentAnswer, task);
         
         const updatedTasks = tasks.map(t => 
           t.id === taskId 
@@ -129,31 +127,79 @@ const TasksPage = () => {
     }
   };
   
-  const generateAIFeedback = (answer: string, task: Task): string => {
-    // In einem realen Projekt würde hier die echte KI-Bewertung erfolgen
-    if (!answer || answer.length < 10) {
-      return "Deine Antwort ist zu kurz. Bitte gib eine ausführlichere Antwort.";
+  // Neue objektive Bewertungsfunktion
+  const evaluateAnswer = (answer: string, task: Task) => {
+    // Keine Manipulationsmöglichkeit durch einfache Anfragen
+    // Die Bewertung erfolgt basierend auf objektiven Kriterien
+    
+    if (!answer || answer.length < 20) {
+      return {
+        feedback: "Die Antwort ist zu kurz und erfüllt nicht die Mindestanforderungen für eine Bewertung. Bitte gib eine ausführlichere Antwort.",
+        grade: "Ungenügend"
+      };
     }
     
-    const feedbacks = [
-      "Sehr gut! Deine Antwort zeigt ein tiefes Verständnis des Themas. Du hast die wichtigsten Konzepte gut erklärt.",
-      "Gut gemacht! Deine Antwort deckt die meisten wichtigen Aspekte ab. Versuche beim nächsten Mal noch detaillierter auf die Zusammenhänge einzugehen.",
-      "Insgesamt eine zufriedenstellende Antwort. Du könntest noch mehr Beispiele anführen, um deine Punkte zu verdeutlichen.",
-      "Deine Antwort enthält einige gute Punkte, aber es fehlen wichtige Aspekte des Themas. Überprüfe nochmals das Kursmaterial.",
-      "Du bist auf dem richtigen Weg, aber deine Antwort könnte präziser sein. Versuche, spezifischer auf die Fragestellung einzugehen."
-    ];
+    // Erzeuge einen "Komplexitätswert" basierend auf der Antwortqualität
+    // In einer echten Anwendung würde hier ein viel komplexeres NLP-Modell stehen
+    const wordCount = answer.split(/\s+/).length;
+    const sentenceCount = answer.split(/[.!?]+/).filter(Boolean).length;
+    const averageSentenceLength = wordCount / Math.max(1, sentenceCount);
+    const uniqueWords = new Set(answer.toLowerCase().match(/\b\w+\b/g)).size;
+    const uniqueWordsRatio = uniqueWords / Math.max(1, wordCount);
     
-    return feedbacks[Math.floor(Math.random() * feedbacks.length)];
-  };
-  
-  const generateAIGrade = (answer: string, task: Task): string => {
-    // In einem realen Projekt würde hier die echte KI-Bewertung erfolgen
-    if (!answer || answer.length < 10) {
-      return "Ungenügend";
+    // Objektive Bewertungskriterien
+    let scorePoints = 0;
+    
+    // Länge und Umfang (max 30 Punkte)
+    if (wordCount >= 200) scorePoints += 30;
+    else if (wordCount >= 150) scorePoints += 25;
+    else if (wordCount >= 100) scorePoints += 20;
+    else if (wordCount >= 50) scorePoints += 15;
+    else scorePoints += 10;
+    
+    // Satzkomplexität (max 30 Punkte)
+    if (averageSentenceLength > 15) scorePoints += 30;
+    else if (averageSentenceLength > 12) scorePoints += 25;
+    else if (averageSentenceLength > 9) scorePoints += 20;
+    else if (averageSentenceLength > 6) scorePoints += 15;
+    else scorePoints += 10;
+    
+    // Wortschatz (max 40 Punkte)
+    if (uniqueWordsRatio > 0.8) scorePoints += 40;
+    else if (uniqueWordsRatio > 0.7) scorePoints += 35;
+    else if (uniqueWordsRatio > 0.6) scorePoints += 30;
+    else if (uniqueWordsRatio > 0.5) scorePoints += 25;
+    else if (uniqueWordsRatio > 0.4) scorePoints += 20;
+    else scorePoints += 15;
+    
+    // Bestimme die Note basierend auf der Punktzahl (max 100 Punkte)
+    let grade: string;
+    let feedback: string;
+    
+    if (scorePoints >= 90) {
+      grade = "Sehr gut";
+      feedback = "Hervorragende Antwort! Du hast ein umfassendes Verständnis des Themas gezeigt, mit detaillierten Erklärungen und klaren Argumenten. Die Antwort ist gut strukturiert und zeigt kritisches Denken.";
+    } else if (scorePoints >= 80) {
+      grade = "Gut";
+      feedback = "Gute Antwort! Du hast ein solides Verständnis des Themas demonstriert. Es gibt einige Bereiche, die noch weiter ausgebaut werden könnten, aber insgesamt eine überzeugende Arbeit.";
+    } else if (scorePoints >= 70) {
+      grade = "Befriedigend";
+      feedback = "Zufriedenstellende Antwort. Du hast grundlegende Konzepte verstanden, aber es fehlt an Tiefe oder detaillierten Erklärungen. Arbeite daran, deine Argumente mit konkreten Beispielen zu untermauern.";
+    } else if (scorePoints >= 60) {
+      grade = "Ausreichend";
+      feedback = "Deine Antwort erfüllt die Mindestanforderungen. Es gibt jedoch erheblichen Raum für Verbesserungen in Bezug auf Inhalt, Struktur und Argumentation.";
+    } else if (scorePoints >= 50) {
+      grade = "Mangelhaft";
+      feedback = "Deine Antwort zeigt nur ein oberflächliches Verständnis des Themas. Es fehlen wesentliche Punkte, und die Erklärungen sind unvollständig. Eine gründlichere Auseinandersetzung mit dem Material ist erforderlich.";
+    } else {
+      grade = "Ungenügend";
+      feedback = "Die Antwort erfüllt nicht die grundlegenden Anforderungen. Bitte überarbeite das Material und versuche, eine umfassendere und fundiertere Antwort zu geben.";
     }
+
+    // Füge eine Zusammenfassung der objektiven Bewertung hinzu
+    feedback += `\n\nBewertungskriterien:\n- Umfang und Ausführlichkeit: ${wordCount} Wörter\n- Satzkomplexität: Durchschnittlich ${averageSentenceLength.toFixed(1)} Wörter pro Satz\n- Wortschatzvielfalt: ${Math.round(uniqueWordsRatio * 100)}% einzigartige Wörter`;
     
-    const grades = ["Sehr gut", "Gut", "Befriedigend", "Ausreichend", "Mangelhaft"];
-    return grades[Math.floor(Math.random() * 3)]; // Vorwiegend bessere Noten für das Demo
+    return { feedback, grade };
   };
   
   const pendingTasks = tasks.filter(task => task.status === "pending");
@@ -336,7 +382,7 @@ const TasksPage = () => {
             {activeTask.status === "submitted" && (
               <div className="rounded-md bg-yellow-50 border border-yellow-200 p-3">
                 <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 text-yellow-500 animate-spin" />
+                  <Loader2 className="h-4 w-4 text-yellow-800 animate-spin" />
                   <p className="text-sm text-yellow-800">
                     Deine Antwort wird bewertet...
                   </p>
@@ -347,7 +393,7 @@ const TasksPage = () => {
             {activeTask.status === "graded" && activeTask.feedback && (
               <div className="space-y-2">
                 <h3 className="font-medium">Feedback:</h3>
-                <div className="rounded-md bg-green-50 border border-green-200 p-3 text-sm text-green-800">
+                <div className="rounded-md bg-green-50 border border-green-200 p-3 text-sm text-green-800 whitespace-pre-line">
                   {activeTask.feedback}
                 </div>
                 <div className="flex items-center justify-between pt-2">
