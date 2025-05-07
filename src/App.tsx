@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "./components/ThemeProvider";
 import MainLayout from "./components/layout/MainLayout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -23,36 +24,38 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route element={<MainLayout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/courses" element={<CoursesPage />} />
-            <Route path="/courses/teaching" element={<CoursesPage />} />
-            <Route path="/courses/manage" element={<CoursesPage />} />
-            <Route path="/courses/:courseId" element={<CourseDetail />} />
-            <Route path="/ai-tutor" element={<AiTutor />} />
-            <Route path="/tasks" element={<TasksPage />} />
-            <Route path="/modules" element={<ModulesPage />} />
-            <Route path="/summaries" element={<SummariesPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/deadlines" element={<DeadlinesPage />} />
-            <Route path="/progress" element={<ProgressPage />} />
-            <Route path="/assignments" element={<Dashboard />} />
-            <Route path="/students" element={<Dashboard />} />
-            <Route path="/users" element={<Dashboard />} />
-            <Route path="/analytics" element={<Dashboard />} />
-            <Route path="/settings" element={<SettingsPage />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route element={<MainLayout />}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/courses" element={<CoursesPage />} />
+              <Route path="/courses/teaching" element={<CoursesPage />} />
+              <Route path="/courses/manage" element={<CoursesPage />} />
+              <Route path="/courses/:courseId" element={<CourseDetail />} />
+              <Route path="/ai-tutor" element={<AiTutor />} />
+              <Route path="/tasks" element={<TasksPage />} />
+              <Route path="/modules" element={<ModulesPage />} />
+              <Route path="/summaries" element={<SummariesPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/deadlines" element={<DeadlinesPage />} />
+              <Route path="/progress" element={<ProgressPage />} />
+              <Route path="/assignments" element={<Dashboard />} />
+              <Route path="/students" element={<Dashboard />} />
+              <Route path="/users" element={<Dashboard />} />
+              <Route path="/analytics" element={<Dashboard />} />
+              <Route path="/settings" element={<SettingsPage />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

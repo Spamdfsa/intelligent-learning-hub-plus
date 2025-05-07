@@ -1,166 +1,266 @@
 
 import { useEffect, useState } from "react";
-import { Task, User } from "@/types";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { mockCourses } from "@/data/mockData";
-import { useNavigate } from "react-router-dom";
-import { format, isBefore, addDays } from "date-fns";
+import { format, parseISO, isBefore } from "date-fns";
 import { de } from "date-fns/locale";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, FileText, AlertTriangle } from "lucide-react";
+import { Task } from "@/types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar } from "@/components/ui/calendar";
+import { useNavigate } from "react-router-dom";
 
 const DeadlinesPage = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [deadlines, setDeadlines] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get user from localStorage
-    const storedUser = localStorage.getItem("lms-user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    // Fetch tasks with due dates from localStorage or API
+    const fetchTasks = () => {
+      const storedCourses = localStorage.getItem("courses");
+      if (!storedCourses) return [];
 
-    // Get all tasks with deadlines from all courses
-    const allDeadlines: Task[] = [];
-    mockCourses.forEach(course => {
-      course.modules.forEach(module => {
-        module.tasks.forEach(task => {
-          if (task.dueDate) {
-            allDeadlines.push({
-              ...task,
-              courseId: course.id,
-              moduleId: module.id
-            });
-          }
+      const courses = JSON.parse(storedCourses);
+      const allTasks: Task[] = [];
+
+      courses.forEach((course: any) => {
+        course.modules.forEach((module: any) => {
+          module.tasks.forEach((task: Task) => {
+            if (task.dueDate) {
+              allTasks.push({
+                ...task,
+                courseId: course.id,
+                moduleId: module.id
+              });
+            }
+          });
         });
       });
-    });
 
-    // Sort by due date (closest first)
-    allDeadlines.sort((a, b) => {
-      if (!a.dueDate || !b.dueDate) return 0;
-      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-    });
+      return allTasks;
+    };
 
-    setDeadlines(allDeadlines);
+    setTasks(fetchTasks());
   }, []);
 
-  const getTaskStatus = (dueDate: string | undefined) => {
-    if (!dueDate) return "none";
-    
-    const due = new Date(dueDate);
-    const now = new Date();
-    
-    if (isBefore(due, now)) {
+  const getDeadlineStatus = (dueDate: string) => {
+    const today = new Date();
+    const deadline = parseISO(dueDate);
+    const isPastDue = isBefore(deadline, today);
+
+    if (isPastDue) {
       return "overdue";
+    } else {
+      const diffDays = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDays <= 3) {
+        return "soon";
+      } else {
+        return "upcoming";
+      }
     }
-    
-    const threeDaysFromNow = addDays(now, 3);
-    if (isBefore(due, threeDaysFromNow)) {
-      return "soon";
-    }
-    
-    return "upcoming";
   };
 
-  const getStatusBadge = (status: string) => {
+  const getBadgeVariant = (status: string) => {
     switch (status) {
       case "overdue":
-        return <Badge variant="destructive" className="ml-2">Überfällig</Badge>;
+        return "destructive";
       case "soon":
-        return <Badge variant="warning" className="ml-2 bg-amber-500">Bald fällig</Badge>;
+        return "outline";
       default:
-        return <Badge variant="secondary" className="ml-2">Kommend</Badge>;
+        return "secondary";
     }
   };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "overdue":
+        return "Überfällig";
+      case "soon":
+        return "Bald fällig";
+      default:
+        return "Anstehend";
+    }
+  };
+
+  const filteredTasks = selectedDate
+    ? tasks.filter((task) => {
+        if (!task.dueDate) return false;
+        const dueDate = parseISO(task.dueDate);
+        return (
+          dueDate.getDate() === selectedDate.getDate() &&
+          dueDate.getMonth() === selectedDate.getMonth() &&
+          dueDate.getFullYear() === selectedDate.getFullYear()
+        );
+      })
+    : tasks;
+
+  const sortedTasks = [...filteredTasks].sort((a, b) => {
+    if (!a.dueDate || !b.dueDate) return 0;
+    return parseISO(a.dueDate).getTime() - parseISO(b.dueDate).getTime();
+  });
+
+  const tasksWithStatus = sortedTasks.map((task) => ({
+    ...task,
+    status: task.dueDate ? getDeadlineStatus(task.dueDate) : "upcoming",
+  }));
 
   const handleTaskClick = (task: Task) => {
     if (task.courseId && task.moduleId) {
-      navigate(`/courses/${task.courseId}?module=${task.moduleId}&task=${task.id}`);
+      navigate(`/courses/${task.courseId}`);
     }
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Nächste Deadlines</h1>
+        <h1 className="text-3xl font-bold">Deadlines</h1>
         <p className="text-muted-foreground">
-          Übersicht deiner anstehenden Aufgaben und Fristen
+          Übersicht deiner anstehenden Abgabetermine
         </p>
       </div>
 
-      <div className="space-y-4">
-        {deadlines.map((task) => {
-          const status = getTaskStatus(task.dueDate);
-          const statusBadge = getStatusBadge(status);
-          const courseTitle = mockCourses.find(c => c.id === task.courseId)?.title || "Unbekannter Kurs";
-          const moduleTitle = mockCourses
-            .find(c => c.id === task.courseId)
-            ?.modules.find(m => m.id === task.moduleId)?.title || "Unbekanntes Modul";
-          
-          return (
-            <Card 
-              key={task.id} 
-              className={`
-                cursor-pointer hover:shadow-md transition-all
-                ${status === "overdue" ? "border-red-500 border-2" : ""}
-                ${status === "soon" ? "border-amber-500 border" : ""}
-              `}
-              onClick={() => handleTaskClick(task)}
-            >
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg flex items-center">
-                      {task.title}
-                      {statusBadge}
-                    </CardTitle>
-                    <CardDescription className="flex items-center gap-1 mt-1">
-                      <span>{courseTitle}</span>
-                      <span>•</span>
-                      <span>{moduleTitle}</span>
-                    </CardDescription>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    {task.type === "assignment" && <FileText className="h-5 w-5 text-primary mr-1" />}
-                    {task.type === "quiz" && <Clock className="h-5 w-5 text-amber-500 mr-1" />}
-                    {status === "overdue" && <AlertTriangle className="h-5 w-5 text-red-500" />}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">
-                      Fällig am {task.dueDate ? format(new Date(task.dueDate), "EEEE, dd. MMMM yyyy", { locale: de }) : "Unbekannt"}
-                    </span>
-                  </div>
-                </div>
-                {task.description && (
-                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{task.description}</p>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="all" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="all">Alle</TabsTrigger>
+              <TabsTrigger value="upcoming">Anstehend</TabsTrigger>
+              <TabsTrigger value="overdue">Überfällig</TabsTrigger>
+            </TabsList>
 
-        {deadlines.length === 0 && (
-          <div className="py-12 text-center">
-            <h3 className="text-lg font-medium">Keine anstehenden Deadlines</h3>
-            <p className="text-muted-foreground">
-              Du hast aktuell keine fälligen Aufgaben.
-            </p>
-          </div>
-        )}
+            <TabsContent value="all" className="space-y-4">
+              {tasksWithStatus.length > 0 ? (
+                tasksWithStatus.map((task) => (
+                  <Card key={task.id} className="cursor-pointer" onClick={() => handleTaskClick(task)}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-medium">{task.title}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {task.description?.substring(0, 100)}
+                            {task.description && task.description.length > 100 ? "..." : ""}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end space-y-2">
+                          <Badge variant={getBadgeVariant(task.status)}>
+                            {getStatusLabel(task.status)}
+                          </Badge>
+                          {task.dueDate && (
+                            <span className="text-xs text-muted-foreground">
+                              Fällig am: {format(parseISO(task.dueDate), "dd.MM.yyyy", { locale: de })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <p className="text-center py-8 text-muted-foreground">
+                  Keine Deadlines für das ausgewählte Datum gefunden.
+                </p>
+              )}
+            </TabsContent>
+
+            <TabsContent value="upcoming" className="space-y-4">
+              {tasksWithStatus.filter(t => t.status !== "overdue").length > 0 ? (
+                tasksWithStatus
+                  .filter(t => t.status !== "overdue")
+                  .map((task) => (
+                    <Card key={task.id} className="cursor-pointer" onClick={() => handleTaskClick(task)}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-medium">{task.title}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {task.description?.substring(0, 100)}
+                              {task.description && task.description.length > 100 ? "..." : ""}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end space-y-2">
+                            <Badge variant={getBadgeVariant(task.status)}>
+                              {getStatusLabel(task.status)}
+                            </Badge>
+                            {task.dueDate && (
+                              <span className="text-xs text-muted-foreground">
+                                Fällig am: {format(parseISO(task.dueDate), "dd.MM.yyyy", { locale: de })}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+              ) : (
+                <p className="text-center py-8 text-muted-foreground">
+                  Keine anstehenden Deadlines gefunden.
+                </p>
+              )}
+            </TabsContent>
+
+            <TabsContent value="overdue" className="space-y-4">
+              {tasksWithStatus.filter(t => t.status === "overdue").length > 0 ? (
+                tasksWithStatus
+                  .filter(t => t.status === "overdue")
+                  .map((task) => (
+                    <Card key={task.id} className="cursor-pointer" onClick={() => handleTaskClick(task)}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-medium">{task.title}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {task.description?.substring(0, 100)}
+                              {task.description && task.description.length > 100 ? "..." : ""}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end space-y-2">
+                            <Badge variant="destructive">
+                              Überfällig
+                            </Badge>
+                            {task.dueDate && (
+                              <span className="text-xs text-muted-foreground">
+                                Fällig am: {format(parseISO(task.dueDate), "dd.MM.yyyy", { locale: de })}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+              ) : (
+                <p className="text-center py-8 text-muted-foreground">
+                  Keine überfälligen Deadlines gefunden.
+                </p>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Kalender</CardTitle>
+              <CardDescription>
+                Wähle ein Datum, um die entsprechenden Deadlines anzuzeigen
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                className="rounded-md border"
+                locale={de}
+              />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

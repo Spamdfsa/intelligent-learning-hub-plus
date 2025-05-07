@@ -1,228 +1,398 @@
 
 import { useEffect, useState } from "react";
-import { User } from "@/types";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { BarChart, Calendar, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { ResponsiveContainer, BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell } from "recharts";
 import { addDays, format, subDays, startOfDay, eachDayOfInterval } from "date-fns";
 import { de } from "date-fns/locale";
-import { useNavigate } from "react-router-dom";
-import { BarChart as BarChartIcon, LineChart } from "lucide-react";
-
-// Generate random activity data for the heatmap
-const generateActivityData = () => {
-  const today = startOfDay(new Date());
-  const sixMonthsAgo = subDays(today, 180);
-  
-  const daysInRange = eachDayOfInterval({
-    start: sixMonthsAgo,
-    end: today
-  });
-  
-  return daysInRange.map(day => {
-    // Generate random value between 0-5
-    const value = Math.floor(Math.random() * 6);
-    return {
-      date: format(day, "yyyy-MM-dd"),
-      value: value,
-      tooltip: `${value} Lerneinheiten am ${format(day, "dd. MMMM", { locale: de })}`
-    };
-  });
-};
-
-// Generate random weekly progress data
-const generateWeeklyData = () => {
-  const weeks = [];
-  for (let i = 12; i >= 0; i--) {
-    weeks.push({
-      name: `KW ${format(subDays(new Date(), i * 7), "w")}`,
-      Kurse: Math.floor(Math.random() * 8) + 1,
-      Aufgaben: Math.floor(Math.random() * 12) + 1,
-      Lerneinheiten: Math.floor(Math.random() * 15) + 5
-    });
-  }
-  return weeks;
-};
-
-// Generate random subject progress data
-const generateSubjectData = () => [
-  { name: "Python", progress: 85 },
-  { name: "Machine Learning", progress: 67 },
-  { name: "Web Development", progress: 72 },
-  { name: "Datenbanken", progress: 45 },
-  { name: "Mathematik", progress: 60 },
-];
+import { Badge } from "@/components/ui/badge";
+import { Course, CompletedModule } from "@/types";
 
 const ProgressPage = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [completedModules, setCompletedModules] = useState<CompletedModule[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [activityData, setActivityData] = useState<any[]>([]);
-  const [weeklyData, setWeeklyData] = useState<any[]>([]);
-  const [subjectData, setSubjectData] = useState<any[]>([]);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    // Get user from localStorage
-    const storedUser = localStorage.getItem("lms-user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    // Load courses from localStorage
+    const storedCourses = localStorage.getItem("courses");
+    if (storedCourses) {
+      setCourses(JSON.parse(storedCourses));
     }
 
-    // Generate mock data
-    setActivityData(generateActivityData());
-    setWeeklyData(generateWeeklyData());
-    setSubjectData(generateSubjectData());
+    // Generate mock completed modules data
+    const mockCompletedModules: CompletedModule[] = [
+      {
+        id: "cm1",
+        courseId: "course1",
+        moduleId: "module1",
+        title: "Einführung in die Programmierung",
+        completedDate: "2022-05-12T15:30:00Z",
+        grade: 85,
+      },
+      {
+        id: "cm2",
+        courseId: "course2",
+        moduleId: "module1",
+        title: "Grundlagen der Informatik",
+        completedDate: "2022-05-15T10:45:00Z",
+        grade: 92,
+      },
+      {
+        id: "cm3",
+        courseId: "course1",
+        moduleId: "module2",
+        title: "Datenstrukturen und Algorithmen",
+        completedDate: "2022-05-18T14:20:00Z",
+        grade: 78,
+      },
+      {
+        id: "cm4",
+        courseId: "course3",
+        moduleId: "module1",
+        title: "Webentwicklung Basics",
+        completedDate: "2022-05-20T09:15:00Z",
+        grade: 88,
+      },
+      {
+        id: "cm5",
+        courseId: "course2",
+        moduleId: "module2",
+        title: "Theorie der Berechenbarkeit",
+        completedDate: "2022-05-22T16:50:00Z",
+        grade: 75,
+      },
+      {
+        id: "cm6",
+        courseId: "course3",
+        moduleId: "module2",
+        title: "Fortgeschrittenes CSS",
+        completedDate: "2022-05-25T11:30:00Z",
+        grade: 90,
+      },
+      {
+        id: "cm7",
+        courseId: "course1",
+        moduleId: "module3",
+        title: "Objektorientierte Programmierung",
+        completedDate: "2022-05-28T13:40:00Z",
+        grade: 82,
+      },
+    ];
+
+    // Generate activity data for the heat map
+    const today = new Date();
+    const startDate = subDays(today, 30);
+    const endDate = today;
+    const dates = eachDayOfInterval({ start: startDate, end: endDate });
+
+    const randomActivities = dates.map(date => {
+      const activity = Math.floor(Math.random() * 8); // 0-7 activities
+      return {
+        date: format(date, "yyyy-MM-dd"),
+        value: activity,
+        day: format(date, "EEE", { locale: de }),
+        display: format(date, "dd.MM"),
+      };
+    });
+
+    setActivityData(randomActivities);
+    setCompletedModules(mockCompletedModules);
   }, []);
 
-  const getColorForValue = (value: number) => {
-    if (value === 0) return "bg-gray-100";
-    if (value === 1) return "bg-green-100";
-    if (value === 2) return "bg-green-200";
-    if (value === 3) return "bg-green-300";
-    if (value === 4) return "bg-green-400";
-    return "bg-green-500";
+  const getCourseById = (id: string) => {
+    return courses.find(course => course.id === id);
   };
 
-  // Group days by month for the heatmap
-  const groupedByMonth = activityData.reduce((acc, item) => {
-    const month = item.date.substring(0, 7); // YYYY-MM
-    if (!acc[month]) {
-      acc[month] = [];
+  const getCompletionRate = () => {
+    if (courses.length === 0) return 0;
+    
+    let totalModules = 0;
+    courses.forEach(course => {
+      totalModules += course.modules.length;
+    });
+    
+    const completionRate = (completedModules.length / totalModules) * 100;
+    return Math.round(completionRate);
+  };
+
+  const getAverageGrade = () => {
+    if (completedModules.length === 0) return 0;
+    
+    const sum = completedModules.reduce((acc, module) => acc + (module.grade || 0), 0);
+    return Math.round(sum / completedModules.length);
+  };
+
+  const getStrongestCourse = () => {
+    if (completedModules.length === 0 || courses.length === 0) return null;
+    
+    const courseGrades: Record<string, { total: number; count: number }> = {};
+    
+    completedModules.forEach(module => {
+      if (module.grade) {
+        if (!courseGrades[module.courseId]) {
+          courseGrades[module.courseId] = { total: 0, count: 0 };
+        }
+        courseGrades[module.courseId].total += module.grade;
+        courseGrades[module.courseId].count += 1;
+      }
+    });
+    
+    let strongestCourseId = "";
+    let highestAvg = 0;
+    
+    Object.entries(courseGrades).forEach(([courseId, data]) => {
+      const avg = data.total / data.count;
+      if (avg > highestAvg) {
+        highestAvg = avg;
+        strongestCourseId = courseId;
+      }
+    });
+    
+    return getCourseById(strongestCourseId);
+  };
+
+  // Function to generate color based on activity value
+  const getActivityColor = (value: number) => {
+    if (value === 0) return "#ebedf0";
+    if (value <= 2) return "#c6e48b";
+    if (value <= 4) return "#7bc96f";
+    if (value <= 6) return "#239a3b";
+    return "#196127";
+  };
+
+  // Custom tool tip for the activity chart
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-popover border border-border rounded-md p-2 shadow-sm">
+          <p className="text-xs font-medium">{data.display}</p>
+          <p className="text-xs">{`${data.value} Aktivitäten`}</p>
+        </div>
+      );
     }
-    acc[month].push(item);
+    return null;
+  };
+
+  // Group activities by week for the bar chart
+  const weeklyActivityData = activityData.reduce((acc: any[], curr, index) => {
+    const weekIndex = Math.floor(index / 7);
+    
+    if (!acc[weekIndex]) {
+      acc[weekIndex] = {
+        name: `W${weekIndex + 1}`,
+        activities: 0
+      };
+    }
+    
+    acc[weekIndex].activities += curr.value;
     return acc;
-  }, {} as Record<string, typeof activityData>);
+  }, []);
+
+  const strongestCourse = getStrongestCourse();
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Lernfortschritt</h1>
         <p className="text-muted-foreground">
-          Visualisiere deinen Fortschritt und deine Lernaktivitäten
+          Übersicht deiner Lernaktivitäten und Fortschritte
         </p>
       </div>
 
-      <Tabs defaultValue="heatmap" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="heatmap">
-            <Calendar className="h-4 w-4 mr-2" />
-            Aktivitäts-Heatmap
-          </TabsTrigger>
-          <TabsTrigger value="stats">
-            <BarChartIcon className="h-4 w-4 mr-2" />
-            Wöchentliche Statistiken
-          </TabsTrigger>
-          <TabsTrigger value="subjects">
-            <LineChart className="h-4 w-4 mr-2" />
-            Fortschritt nach Fächern
-          </TabsTrigger>
-        </TabsList>
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Abgeschlossene Module</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{completedModules.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              von insgesamt {courses.reduce((acc, course) => acc + course.modules.length, 0)} Modulen
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Gesamtfortschritt</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{getCompletionRate()}%</div>
+            <div className="mt-2 h-2 w-full bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-primary" 
+                style={{ width: `${getCompletionRate()}%` }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Durchschnittsnote</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{getAverageGrade()}/100</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {getAverageGrade() >= 90 ? "Sehr gut" : 
+               getAverageGrade() >= 80 ? "Gut" : 
+               getAverageGrade() >= 70 ? "Befriedigend" : 
+               getAverageGrade() >= 60 ? "Ausreichend" : "Nachbesserung nötig"}
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Stärkster Kurs</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg font-bold line-clamp-1">
+              {strongestCourse?.title || "Keine Daten"}
+            </div>
+            {strongestCourse && (
+              <Badge variant="outline" className="mt-1">
+                {strongestCourse.category}
+              </Badge>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
-        <TabsContent value="heatmap" className="space-y-6">
+      <Tabs defaultValue="activity" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="activity">Aktivitäten</TabsTrigger>
+          <TabsTrigger value="modules">Abgeschlossene Module</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="activity">
           <Card>
             <CardHeader>
-              <CardTitle>Lernaktivität</CardTitle>
+              <CardTitle>Aktivitätsübersicht</CardTitle>
               <CardDescription>
-                Deine tägliche Lernaktivität der letzten 6 Monate
+                Deine täglichen Lernaktivitäten der letzten 30 Tage
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-8">
-                {Object.entries(groupedByMonth).map(([month, days]) => {
-                  const [year, monthNum] = month.split('-');
-                  const monthName = format(new Date(parseInt(year), parseInt(monthNum) - 1, 1), "MMMM yyyy", { locale: de });
-                  
-                  return (
-                    <div key={month} className="space-y-2">
-                      <h3 className="text-lg font-medium capitalize">{monthName}</h3>
-                      <div className="grid grid-cols-7 gap-1">
-                        {days.map((day, index) => (
-                          <div 
-                            key={index}
-                            className={`w-6 h-6 rounded-sm ${getColorForValue(day.value)}`}
-                            title={day.tooltip}
-                          />
-                        ))}
+            <CardContent className="space-y-8">
+              <div className="h-64">
+                <h3 className="text-lg font-medium mb-4">Wöchentliche Aktivitäten</h3>
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsBarChart
+                    data={weeklyActivityData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="activities" name="Aktivitäten" fill="#8884d8" />
+                  </RechartsBarChart>
+                </ResponsiveContainer>
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-medium mb-4">Aktivitäts-Heatmap</h3>
+                <div className="overflow-x-auto pb-4">
+                  <div className="flex min-w-max gap-1">
+                    {activityData.map((day, index) => (
+                      <div key={index} className="flex flex-col items-center">
+                        <div 
+                          className="w-8 h-8 rounded-sm tooltip-trigger"
+                          style={{ backgroundColor: getActivityColor(day.value) }}
+                          title={`${day.display}: ${day.value} Aktivitäten`}
+                        />
+                        <span className="text-xs text-muted-foreground mt-1">
+                          {index % 7 === 0 ? day.day : ""}
+                        </span>
                       </div>
-                    </div>
-                  );
-                })}
-                
-                <div className="flex items-center justify-end space-x-2">
-                  <span className="text-xs text-muted-foreground">Weniger</span>
-                  <div className="flex space-x-1">
-                    <div className="w-4 h-4 rounded-sm bg-gray-100"></div>
-                    <div className="w-4 h-4 rounded-sm bg-green-100"></div>
-                    <div className="w-4 h-4 rounded-sm bg-green-200"></div>
-                    <div className="w-4 h-4 rounded-sm bg-green-300"></div>
-                    <div className="w-4 h-4 rounded-sm bg-green-400"></div>
-                    <div className="w-4 h-4 rounded-sm bg-green-500"></div>
+                    ))}
                   </div>
+                </div>
+                <div className="flex items-center justify-end gap-2 mt-2">
+                  <span className="text-xs text-muted-foreground">Weniger</span>
+                  {[0, 2, 4, 6, 8].map((value) => (
+                    <div 
+                      key={value}
+                      className="w-4 h-4 rounded-sm"
+                      style={{ backgroundColor: getActivityColor(value) }}
+                    />
+                  ))}
                   <span className="text-xs text-muted-foreground">Mehr</span>
                 </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
-
-        <TabsContent value="stats" className="space-y-6">
+        
+        <TabsContent value="modules">
           <Card>
             <CardHeader>
-              <CardTitle>Wöchentlicher Fortschritt</CardTitle>
+              <CardTitle>Abgeschlossene Module</CardTitle>
               <CardDescription>
-                Deine Lernaktivitäten der letzten 12 Wochen
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <ChartContainer 
-                className="h-[300px]"
-                series={[
-                  { name: "Kurse", color: "primary" },
-                  { name: "Aufgaben", color: "amber" },
-                  { name: "Lerneinheiten", color: "green" }
-                ]}
-                dataSource={weeklyData}
-              >
-                <ChartTooltip className="bg-background">
-                  <ChartTooltipContent />
-                </ChartTooltip>
-                <BarChart />
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="subjects" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Fortschritt nach Fächern</CardTitle>
-              <CardDescription>
-                Dein aktueller Fortschritt in verschiedenen Fachgebieten
+                Übersicht aller abgeschlossenen Module
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {subjectData.map((subject) => (
-                  <div key={subject.name} className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <div className="font-medium">{subject.name}</div>
-                      <div className="text-sm text-muted-foreground">{subject.progress}%</div>
-                    </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary"
-                        style={{ width: `${subject.progress}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                {completedModules.length > 0 ? (
+                  completedModules.map((module) => {
+                    const course = getCourseById(module.courseId);
+                    return (
+                      <div key={module.id} className="flex items-center justify-between border-b pb-4">
+                        <div>
+                          <h3 className="font-medium">{module.title}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {course?.title || "Unbekannter Kurs"}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <div className="text-sm font-medium">
+                              {module.grade ? `${module.grade}/100` : "Keine Note"}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Abgeschlossen am {format(new Date(module.completedDate), "dd.MM.yyyy")}
+                            </p>
+                          </div>
+                          <div 
+                            className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-medium"
+                            style={{
+                              backgroundColor: module.grade ? 
+                                module.grade >= 90 ? "#22c55e" : 
+                                module.grade >= 80 ? "#84cc16" : 
+                                module.grade >= 70 ? "#eab308" : 
+                                module.grade >= 60 ? "#f97316" : "#ef4444" : "#94a3b8",
+                              color: module.grade && module.grade < 70 ? "#ffffff" : undefined
+                            }}
+                          >
+                            {module.grade || "N/A"}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-center py-8 text-muted-foreground">
+                    Noch keine Module abgeschlossen.
+                  </p>
+                )}
               </div>
             </CardContent>
+            <CardFooter>
+              <p className="text-sm text-muted-foreground">
+                Deine durchschnittliche Note: <span className="font-medium">{getAverageGrade()}/100</span>
+              </p>
+            </CardFooter>
           </Card>
         </TabsContent>
       </Tabs>

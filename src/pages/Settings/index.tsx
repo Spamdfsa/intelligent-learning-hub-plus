@@ -23,11 +23,13 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Bell, User as UserIcon, Shield, Palette } from "lucide-react";
+import { useTheme } from "@/components/ThemeProvider";
 
 const SettingsPage = () => {
   const [user, setUser] = useState<User | null>(null);
   const [settings, setSettings] = useState<UserSetting[]>([]);
   const { toast } = useToast();
+  const { theme, setTheme, compactMode, setCompactMode } = useTheme();
 
   useEffect(() => {
     // Get user from localStorage
@@ -46,14 +48,14 @@ const SettingsPage = () => {
         enabled: true,
         type: "select",
         options: ["System", "Hell", "Dunkel"],
-        value: "System",
+        value: theme === "system" ? "System" : theme === "light" ? "Hell" : "Dunkel",
         category: "appearance"
       },
       {
         id: "compactMode",
         name: "Kompakter Modus",
         description: "Reduziere Abstände und Größen für mehr Inhalte",
-        enabled: false,
+        enabled: compactMode,
         type: "toggle",
         category: "appearance"
       },
@@ -130,7 +132,7 @@ const SettingsPage = () => {
     ];
     
     setSettings(mockSettings);
-  }, []);
+  }, [theme, compactMode]);
 
   const handleUpdateSetting = (id: string, value: boolean | string) => {
     setSettings(prev => 
@@ -140,6 +142,20 @@ const SettingsPage = () => {
           : setting
       )
     );
+    
+    // Handle special settings
+    if (id === "theme") {
+      const themeValue = value as string;
+      if (themeValue === "System") {
+        setTheme("system");
+      } else if (themeValue === "Hell") {
+        setTheme("light");
+      } else if (themeValue === "Dunkel") {
+        setTheme("dark");
+      }
+    } else if (id === "compactMode") {
+      setCompactMode(value as boolean);
+    }
     
     toast({
       title: "Einstellung aktualisiert",

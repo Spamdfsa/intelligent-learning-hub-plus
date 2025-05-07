@@ -43,6 +43,20 @@
     --sidebar-accent-foreground: 222.2 47.4% 11.2%;
     --sidebar-border: 214.3 31.8% 91.4%;
     --sidebar-ring: 221.2 83.2% 53.3%;
+    
+    /* Default spacing variables */
+    --spacing-1: 0.25rem;
+    --spacing-2: 0.5rem;
+    --spacing-3: 0.75rem;
+    --spacing-4: 1rem;
+    --spacing-6: 1.5rem;
+    --spacing-8: 2rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
   }
 
   .dark {
@@ -83,6 +97,49 @@
     --sidebar-border: 217.2 32.6% 17.5%;
     --sidebar-ring: 224.3 76.3% 48%;
   }
+  
+  /* Compact mode styles */
+  .compact {
+    --spacing-1: 0.125rem;
+    --spacing-2: 0.25rem;
+    --spacing-3: 0.5rem;
+    --spacing-4: 0.75rem;
+    --spacing-6: 1rem;
+    --spacing-8: 1.5rem;
+    --font-size-sm: 0.75rem;
+    --font-size-base: 0.875rem;
+    --font-size-lg: 1rem;
+    --font-size-xl: 1.125rem;
+    --font-size-2xl: 1.25rem;
+    --font-size-3xl: 1.5rem;
+  }
+  
+  /* Apply compact mode to specific elements */
+  .compact .card {
+    padding: var(--spacing-3);
+  }
+  
+  .compact .p-6 {
+    padding: var(--spacing-4);
+  }
+  
+  .compact .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(var(--spacing-4) * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(var(--spacing-4) * var(--tw-space-y-reverse));
+  }
+  
+  .compact h1.text-3xl {
+    font-size: var(--font-size-2xl);
+  }
+  
+  .compact h2.text-2xl {
+    font-size: var(--font-size-xl);
+  }
+  
+  .compact .text-sm {
+    font-size: var(--font-size-sm);
+  }
 }
 
 @layer base {
@@ -116,25 +173,50 @@
   .course-card-content {
     @apply flex flex-col space-y-1.5 p-4;
   }
+  
+  /* Compact mode adjustments for course cards */
+  .compact .course-card-content {
+    @apply p-2 space-y-1;
+  }
 
   .course-card-title {
     @apply text-lg font-semibold leading-tight tracking-tight;
+  }
+  
+  .compact .course-card-title {
+    @apply text-base;
   }
 
   .course-card-description {
     @apply text-sm text-muted-foreground line-clamp-2;
   }
+  
+  .compact .course-card-description {
+    @apply text-xs line-clamp-1;
+  }
 
   .course-card-footer {
     @apply flex items-center justify-between p-4 pt-0;
+  }
+  
+  .compact .course-card-footer {
+    @apply p-2 pt-0;
   }
 
   .module-card {
     @apply space-y-2 rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md;
   }
+  
+  .compact .module-card {
+    @apply p-2 space-y-1;
+  }
 
   .task-item {
     @apply flex items-center gap-3 rounded-md border p-3 text-sm;
+  }
+  
+  .compact .task-item {
+    @apply p-2 gap-2 text-xs;
   }
 
   .task-item-completed {
