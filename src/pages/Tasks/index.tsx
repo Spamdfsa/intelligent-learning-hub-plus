@@ -1,10 +1,12 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Clock, Loader2, X } from "lucide-react";
+import { Check, Clock, Loader2, X, MessageCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface Task {
   id: string;
@@ -20,6 +22,7 @@ interface Task {
   createdAt: Date;
   submittedAt?: Date;
   generatedBy: "ai" | "teacher";
+  messages?: {id: string, content: string, role: "user" | "assistant", timestamp: Date}[];
 }
 
 const TasksPage = () => {
@@ -28,6 +31,8 @@ const TasksPage = () => {
   const [answer, setAnswer] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGrading, setIsGrading] = useState(false);
+  const [chatMessage, setChatMessage] = useState("");
+  const [isSendingChat, setIsSendingChat] = useState(false);
   const { toast } = useToast();
   
   useEffect(() => {
@@ -93,7 +98,7 @@ const TasksPage = () => {
           throw new Error("Aufgabe nicht gefunden");
         }
         
-        // Simuliere KI-Bewertung mit objektiven Kriterien
+        // Hole die verbesserte Bewertung vom evaluateAnswer
         const { feedback, grade } = evaluateAnswer(studentAnswer, task);
         
         const updatedTasks = tasks.map(t => 
@@ -102,7 +107,8 @@ const TasksPage = () => {
                 ...t, 
                 status: "graded" as const, 
                 feedback, 
-                grade 
+                grade,
+                messages: t.messages || [] 
               } 
             : t
         );
@@ -111,8 +117,8 @@ const TasksPage = () => {
         setActiveTask(updatedTasks.find(t => t.id === taskId) || null);
         
         toast({
-          title: "Automatische Bewertung abgeschlossen",
-          description: "Die KI hat deine Antwort bewertet.",
+          title: "Bewertung abgeschlossen",
+          description: "Deine Antwort wurde bewertet.",
         });
         
         setIsGrading(false);
@@ -120,34 +126,33 @@ const TasksPage = () => {
     } catch (error) {
       toast({
         title: "Fehler",
-        description: "Es gab ein Problem bei der automatischen Bewertung.",
+        description: "Es gab ein Problem bei der Bewertung.",
         variant: "destructive",
       });
       setIsGrading(false);
     }
   };
   
-  // Neue objektive Bewertungsfunktion
+  // Verbesserte Bewertungsfunktion mit Teacher-Prompt
   const evaluateAnswer = (answer: string, task: Task) => {
-    // Keine Manipulationsmöglichkeit durch einfache Anfragen
-    // Die Bewertung erfolgt basierend auf objektiven Kriterien
+    // Keine objektiven Kriterien in der sichtbaren Bewertung mehr anzeigen
+    // Stattdessen Lehrkraft-ähnliche kritische Bewertung
     
     if (!answer || answer.length < 20) {
       return {
-        feedback: "Die Antwort ist zu kurz und erfüllt nicht die Mindestanforderungen für eine Bewertung. Bitte gib eine ausführlichere Antwort.",
+        feedback: "Die Antwort ist zu kurz und erfüllt nicht die Mindestanforderungen für eine Bewertung. Bitte reiche eine ausführlichere Antwort ein.",
         grade: "Ungenügend"
       };
     }
     
-    // Erzeuge einen "Komplexitätswert" basierend auf der Antwortqualität
-    // In einer echten Anwendung würde hier ein viel komplexeres NLP-Modell stehen
+    // Versteckte Bewertungskriterien (nicht im Feedback sichtbar)
     const wordCount = answer.split(/\s+/).length;
     const sentenceCount = answer.split(/[.!?]+/).filter(Boolean).length;
     const averageSentenceLength = wordCount / Math.max(1, sentenceCount);
     const uniqueWords = new Set(answer.toLowerCase().match(/\b\w+\b/g)).size;
     const uniqueWordsRatio = uniqueWords / Math.max(1, wordCount);
     
-    // Objektive Bewertungskriterien
+    // Objektive Bewertungskriterien im Hintergrund
     let scorePoints = 0;
     
     // Länge und Umfang (max 30 Punkte)
@@ -172,34 +177,123 @@ const TasksPage = () => {
     else if (uniqueWordsRatio > 0.4) scorePoints += 20;
     else scorePoints += 15;
     
-    // Bestimme die Note basierend auf der Punktzahl (max 100 Punkte)
+    // Lehrer-Feedback ohne sichtbare Kriterien
     let grade: string;
     let feedback: string;
     
     if (scorePoints >= 90) {
       grade = "Sehr gut";
-      feedback = "Hervorragende Antwort! Du hast ein umfassendes Verständnis des Themas gezeigt, mit detaillierten Erklärungen und klaren Argumenten. Die Antwort ist gut strukturiert und zeigt kritisches Denken.";
+      feedback = "Sehr gut! Du hast die Aufgabenstellung vollständig erfasst und alle relevanten Aspekte korrekt behandelt. Deine Ausführungen sind präzise und zeigen ein hervorragendes Verständnis des Themas.";
     } else if (scorePoints >= 80) {
       grade = "Gut";
-      feedback = "Gute Antwort! Du hast ein solides Verständnis des Themas demonstriert. Es gibt einige Bereiche, die noch weiter ausgebaut werden könnten, aber insgesamt eine überzeugende Arbeit.";
+      feedback = "Gut! Deine Antwort enthält die meisten wichtigen Punkte und zeigt ein gutes Verständnis des Themas. An einigen Stellen könnte die Erklärung noch detaillierter sein.";
     } else if (scorePoints >= 70) {
       grade = "Befriedigend";
-      feedback = "Zufriedenstellende Antwort. Du hast grundlegende Konzepte verstanden, aber es fehlt an Tiefe oder detaillierten Erklärungen. Arbeite daran, deine Argumente mit konkreten Beispielen zu untermauern.";
+      feedback = "Deine Antwort zeigt ein grundlegendes Verständnis des Themas, jedoch fehlen einige wichtige Aspekte oder wurden nicht ausreichend erläutert. Achte darauf, alle Teile der Aufgabenstellung zu berücksichtigen.";
     } else if (scorePoints >= 60) {
       grade = "Ausreichend";
-      feedback = "Deine Antwort erfüllt die Mindestanforderungen. Es gibt jedoch erheblichen Raum für Verbesserungen in Bezug auf Inhalt, Struktur und Argumentation.";
+      feedback = "Deine Antwort erfüllt die grundlegenden Anforderungen, weist jedoch einige inhaltliche Lücken und Ungenauigkeiten auf. Für eine bessere Bewertung solltest du die Kernaspekte der Fragestellung ausführlicher behandeln.";
     } else if (scorePoints >= 50) {
       grade = "Mangelhaft";
-      feedback = "Deine Antwort zeigt nur ein oberflächliches Verständnis des Themas. Es fehlen wesentliche Punkte, und die Erklärungen sind unvollständig. Eine gründlichere Auseinandersetzung mit dem Material ist erforderlich.";
+      feedback = "Deine Antwort behandelt das Thema nur oberflächlich und enthält einige Fehler. Wichtige Kernpunkte der Aufgabe wurden nicht ausreichend oder gar nicht behandelt. Für die nächste Aufgabe empfehle ich eine tiefere Auseinandersetzung mit dem Material.";
     } else {
       grade = "Ungenügend";
-      feedback = "Die Antwort erfüllt nicht die grundlegenden Anforderungen. Bitte überarbeite das Material und versuche, eine umfassendere und fundiertere Antwort zu geben.";
+      feedback = "Die eingereichte Arbeit entspricht leider nicht den grundlegenden Anforderungen der Aufgabenstellung. Wesentliche Aspekte fehlen oder sind falsch dargestellt. Ich empfehle, das Material erneut durchzuarbeiten und bei Unklarheiten Fragen zu stellen.";
     }
 
-    // Füge eine Zusammenfassung der objektiven Bewertung hinzu
-    feedback += `\n\nBewertungskriterien:\n- Umfang und Ausführlichkeit: ${wordCount} Wörter\n- Satzkomplexität: Durchschnittlich ${averageSentenceLength.toFixed(1)} Wörter pro Satz\n- Wortschatzvielfalt: ${Math.round(uniqueWordsRatio * 100)}% einzigartige Wörter`;
+    // Lösungsvorschlag für ungenügende oder mangelhafte Antworten hinzufügen
+    if (grade === "Ungenügend" || grade === "Mangelhaft") {
+      feedback += "\n\nHier ist ein Ansatz, wie die Aufgabe besser gelöst werden könnte:\n";
+      feedback += generateSampleSolution(task);
+      feedback += "\n\nNutze den Chat, um Rückfragen zu stellen oder klärende Fragen zur Aufgabe zu stellen.";
+    }
     
     return { feedback, grade };
+  };
+
+  // Funktion zum Generieren eines Lösungsvorschlags für schlechte Antworten
+  const generateSampleSolution = (task: Task) => {
+    // Je nach Task-Typ unterschiedliche Lösungsvorschläge generieren
+    if (task.type === "quiz") {
+      return "Beim Beantworten von Quizfragen ist es wichtig, die Fragestellung genau zu verstehen und alle relevanten Konzepte einzubeziehen. Achte auf präzise Definitionen und erläutere auch die Zusammenhänge zwischen den Konzepten.";
+    } else {
+      return "Bei einer Zusammenfassung solltest du die wichtigsten Punkte identifizieren und in eigenen Worten wiedergeben. Achte darauf, die Kernaussagen zu extrahieren und in einer logischen Struktur zu präsentieren. Vermeide es, unwichtige Details einzubeziehen oder vom Thema abzuschweifen.";
+    }
+  };
+
+  // Chat-Funktion zur Rückfrage
+  const handleSendChatMessage = () => {
+    if (!chatMessage.trim() || !activeTask) return;
+    
+    setIsSendingChat(true);
+    
+    try {
+      const userMessage = {
+        id: `user-${Date.now()}`,
+        content: chatMessage,
+        role: "user" as const,
+        timestamp: new Date()
+      };
+      
+      // Aktualisiere die Task mit der neuen Nachricht
+      const updatedTasks = tasks.map(t => 
+        t.id === activeTask.id 
+          ? { 
+              ...t, 
+              messages: [...(t.messages || []), userMessage] 
+            } 
+          : t
+      );
+      
+      saveTasksToStorage(updatedTasks);
+      setActiveTask(updatedTasks.find(t => t.id === activeTask.id) || null);
+      setChatMessage("");
+      
+      // Simuliere eine Antwort vom Lehrer/System nach einer kurzen Verzögerung
+      setTimeout(() => {
+        const assistantResponse = {
+          id: `assistant-${Date.now()}`,
+          content: generateAssistantResponse(chatMessage, activeTask),
+          role: "assistant" as const,
+          timestamp: new Date()
+        };
+        
+        const updatedTasksWithResponse = tasks.map(t => 
+          t.id === activeTask.id 
+            ? { 
+                ...t, 
+                messages: [...(t.messages || []), assistantResponse] 
+              } 
+            : t
+        );
+        
+        saveTasksToStorage(updatedTasksWithResponse);
+        setActiveTask(updatedTasksWithResponse.find(t => t.id === activeTask.id) || null);
+        setIsSendingChat(false);
+      }, 1000);
+    } catch (error) {
+      toast({
+        title: "Fehler",
+        description: "Es gab ein Problem beim Senden deiner Nachricht.",
+        variant: "destructive",
+      });
+      setIsSendingChat(false);
+    }
+  };
+  
+  // Generiere eine Lehrerperson-Antwort
+  const generateAssistantResponse = (message: string, task: Task) => {
+    const lowerMessage = message.toLowerCase();
+    
+    if (lowerMessage.includes("lösung") || lowerMessage.includes("hilfe") || lowerMessage.includes("verstehe nicht")) {
+      return "Ich kann dir Hinweise geben, aber keine kompletten Lösungen. Versuche, die Aufgabe in kleinere Teilprobleme zu zerlegen und überlege, welche Konzepte aus dem Unterricht relevant sein könnten.";
+    } else if (lowerMessage.includes("bewertung") || lowerMessage.includes("note") || lowerMessage.includes("punkte")) {
+      return "Die Bewertung erfolgt nach fachlichen und didaktischen Kriterien. Eine gute Antwort zeigt ein tiefes Verständnis des Themas, behandelt alle relevanten Aspekte der Fragestellung und ist klar strukturiert.";
+    } else if (lowerMessage.includes("frist") || lowerMessage.includes("abgabe") || lowerMessage.includes("zeit")) {
+      return `Die Abgabefrist für diese Aufgabe ist am ${task.dueDate || "Ende der Woche"}. Planungstipp: Beginne frühzeitig, um genug Zeit für Recherche und Überarbeitung zu haben.`;
+    } else {
+      return "Danke für deine Nachricht. Bitte sei bei Fragen möglichst spezifisch, damit ich dir gezielt helfen kann. Wenn du Schwierigkeiten mit bestimmten Konzepten hast, kannst du auch Teile deiner Antwort vorab teilen, um Feedback zu erhalten.";
+    }
   };
   
   const pendingTasks = tasks.filter(task => task.status === "pending");
@@ -240,9 +334,9 @@ const TasksPage = () => {
                           <CardTitle className="text-lg">{task.title}</CardTitle>
                           <div className="flex items-center gap-1 text-xs">
                             {task.type === "quiz" ? (
-                              <span className="rounded bg-blue-100 px-2 py-1 text-blue-800">Quiz</span>
+                              <span className="rounded bg-blue-100 px-2 py-1 text-blue-800 dark:bg-blue-900 dark:text-blue-200">Quiz</span>
                             ) : (
-                              <span className="rounded bg-purple-100 px-2 py-1 text-purple-800">Zusammenfassung</span>
+                              <span className="rounded bg-purple-100 px-2 py-1 text-purple-800 dark:bg-purple-900 dark:text-purple-200">Zusammenfassung</span>
                             )}
                           </div>
                         </div>
@@ -272,7 +366,7 @@ const TasksPage = () => {
                         {task.status === "graded" && (
                           <div className="mt-2 flex items-center justify-between">
                             <span className="text-xs text-muted-foreground">Bewertung:</span>
-                            <span className={`font-medium ${task.grade === "Sehr gut" || task.grade === "Gut" ? "text-green-600" : task.grade === "Befriedigend" ? "text-yellow-600" : "text-red-600"}`}>
+                            <span className={`font-medium ${task.grade === "Sehr gut" || task.grade === "Gut" ? "text-green-600 dark:text-green-400" : task.grade === "Befriedigend" ? "text-yellow-600 dark:text-yellow-400" : "text-red-600 dark:text-red-400"}`}>
                               {task.grade}
                             </span>
                           </div>
@@ -380,10 +474,10 @@ const TasksPage = () => {
             )}
 
             {activeTask.status === "submitted" && (
-              <div className="rounded-md bg-yellow-50 border border-yellow-200 p-3">
+              <div className="rounded-md bg-yellow-50 border border-yellow-200 p-3 dark:bg-yellow-900/30 dark:border-yellow-700">
                 <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 text-yellow-800 animate-spin" />
-                  <p className="text-sm text-yellow-800">
+                  <Loader2 className="h-4 w-4 text-yellow-800 dark:text-yellow-400 animate-spin" />
+                  <p className="text-sm text-yellow-800 dark:text-yellow-400">
                     Deine Antwort wird bewertet...
                   </p>
                 </div>
@@ -393,14 +487,64 @@ const TasksPage = () => {
             {activeTask.status === "graded" && activeTask.feedback && (
               <div className="space-y-2">
                 <h3 className="font-medium">Feedback:</h3>
-                <div className="rounded-md bg-green-50 border border-green-200 p-3 text-sm text-green-800 whitespace-pre-line">
+                <div className="rounded-md bg-green-50 border border-green-200 p-3 text-sm text-green-800 whitespace-pre-line dark:bg-green-900/20 dark:border-green-800 dark:text-green-300">
                   {activeTask.feedback}
                 </div>
                 <div className="flex items-center justify-between pt-2">
                   <span className="text-sm font-medium">Bewertung:</span>
-                  <span className={`font-medium ${activeTask.grade === "Sehr gut" || activeTask.grade === "Gut" ? "text-green-600" : activeTask.grade === "Befriedigend" ? "text-yellow-600" : "text-red-600"}`}>
+                  <span className={`font-medium ${activeTask.grade === "Sehr gut" || activeTask.grade === "Gut" ? "text-green-600 dark:text-green-400" : activeTask.grade === "Befriedigend" ? "text-yellow-600 dark:text-yellow-400" : "text-red-600 dark:text-red-400"}`}>
                     {activeTask.grade}
                   </span>
+                </div>
+              </div>
+            )}
+            
+            {/* Chat-Bereich für Rückfragen */}
+            {activeTask.status !== "pending" && (
+              <div className="mt-6 border-t pt-4">
+                <h3 className="font-medium mb-2 flex items-center">
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Rückfragen zur Aufgabe
+                </h3>
+                
+                {/* Chat-Nachrichten */}
+                <div className="rounded-md border bg-muted/30 mb-3 p-2 max-h-60 overflow-y-auto">
+                  {activeTask.messages && activeTask.messages.length > 0 ? (
+                    <div className="space-y-3">
+                      {activeTask.messages.map(message => (
+                        <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                          <div className={`max-w-[80%] rounded-lg p-2 text-sm ${
+                            message.role === "user" 
+                              ? "bg-primary text-primary-foreground" 
+                              : "bg-secondary text-secondary-foreground"
+                          }`}>
+                            {message.content}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-center text-muted-foreground py-4">
+                      Noch keine Nachrichten. Stelle eine Frage zur Aufgabe.
+                    </p>
+                  )}
+                </div>
+                
+                {/* Chat-Eingabefeld */}
+                <div className="flex gap-2">
+                  <Input
+                    value={chatMessage}
+                    onChange={(e) => setChatMessage(e.target.value)}
+                    placeholder="Stelle eine Frage zur Aufgabe..."
+                    className="flex-1"
+                  />
+                  <Button 
+                    onClick={handleSendChatMessage}
+                    disabled={isSendingChat || !chatMessage.trim()}
+                    size="sm"
+                  >
+                    {isSendingChat ? <Loader2 className="h-4 w-4 animate-spin" /> : "Senden"}
+                  </Button>
                 </div>
               </div>
             )}
