@@ -29,51 +29,53 @@ const CreateCourse = () => {
     setIsLoading(true);
 
     try {
-      // In a real app, this would be an API call
-      // Simulating course creation with mock data for demo
-      setTimeout(() => {
-        // Get user info
-        const userJson = localStorage.getItem("lms-user");
-        if (!userJson) {
-          toast({
-            title: "Fehler",
-            description: "Du musst angemeldet sein, um einen Kurs zu erstellen.",
-            variant: "destructive",
-          });
-          setIsLoading(false);
-          return;
-        }
-        
-        const user = JSON.parse(userJson);
-        
-        // Create new course
-        const newCourse = {
-          id: uuidv4(),
-          title,
-          description,
-          instructor: user.name,
-          instructor_id: user.id,
-          level,
-          progress: 0,
-          enrolled: 0,
-          image: "/placeholder.svg",
-          created_at: new Date().toISOString()
-        };
-        
-        // Store course in localStorage
-        const existingCoursesJson = localStorage.getItem("lms-courses");
-        const existingCourses = existingCoursesJson ? JSON.parse(existingCoursesJson) : [];
-        existingCourses.push(newCourse);
-        localStorage.setItem("lms-courses", JSON.stringify(existingCourses));
-        
+      // Get user info
+      const userJson = localStorage.getItem("lms-user");
+      if (!userJson) {
         toast({
-          title: "Kurs erstellt",
-          description: "Dein Kurs wurde erfolgreich erstellt.",
+          title: "Fehler",
+          description: "Du musst angemeldet sein, um einen Kurs zu erstellen.",
+          variant: "destructive",
         });
-        
-        navigate('/courses/teaching');
         setIsLoading(false);
-      }, 1000);
+        return;
+      }
+      
+      const user = JSON.parse(userJson);
+      
+      // Create new course
+      const newCourse = {
+        id: uuidv4(),
+        title,
+        description,
+        instructor: user.name,
+        instructor_id: user.id,
+        instructorId: user.id, // Adding both versions for compatibility
+        level,
+        progress: 0,
+        enrolled: 0,
+        enrolledStudents: 0, // Adding both versions for compatibility
+        image: "/placeholder.svg",
+        created_at: new Date().toISOString(),
+        bannerColor: "blue", // Default banner color
+        category: "Other", // Default category
+        duration: "Self-paced", // Default duration
+        modules: [] // Empty modules array
+      };
+      
+      // Store course in localStorage
+      const existingCoursesJson = localStorage.getItem("lms-courses");
+      const existingCourses = existingCoursesJson ? JSON.parse(existingCoursesJson) : [];
+      existingCourses.push(newCourse);
+      localStorage.setItem("lms-courses", JSON.stringify(existingCourses));
+      
+      toast({
+        title: "Kurs erstellt",
+        description: "Dein Kurs wurde erfolgreich erstellt.",
+      });
+      
+      navigate('/courses/teaching');
+      setIsLoading(false);
     } catch (error) {
       toast({
         title: "Fehler",

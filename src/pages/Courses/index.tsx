@@ -1,5 +1,5 @@
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { mockCourses } from "@/data/mockData";
 import { Course, User } from "@/types";
 import CourseCard from "@/components/courses/CourseCard";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
   Command,
   CommandEmpty,
@@ -43,20 +44,40 @@ const CoursesPage = () => {
       setUser(userData);
     }
 
-    // Set courses
-    setCourses(mockCourses);
+    // Get all courses including locally stored ones
+    const allCourses = [...mockCourses];
+    
+    // Add locally created courses
+    const localCoursesJSON = localStorage.getItem("lms-courses");
+    if (localCoursesJSON) {
+      const localCourses = JSON.parse(localCoursesJSON);
+      allCourses.push(...localCourses);
+    }
+    
+    setCourses(allCourses);
   }, []);
 
-  // Filter courses based on selected filter and search
+  // Filter courses based on role, selected filter, and search
   const filteredCourses = courses.filter((course) => {
-    const matchesFilter = filter === "all" || 
-                          (filter === "beginner" && course.level === "Beginner") ||
-                          (filter === "intermediate" && course.level === "Intermediate") ||
-                          (filter === "advanced" && course.level === "Advanced");
+    // Filter by user role
+    if (user?.role === "teacher" || user?.role === "lecturer") {
+      const instructorMatch = course.instructor_id === user.id || 
+                             course.instructorId === user.id;
+      if (!instructorMatch) {
+        return false;
+      }
+    }
     
+    // Filter by difficulty level
+    const matchesFilter = filter === "all" || 
+                         (filter === "beginner" && course.level === "Beginner") ||
+                         (filter === "intermediate" && course.level === "Intermediate") ||
+                         (filter === "advanced" && course.level === "Advanced");
+    
+    // Filter by search term
     const matchesSearch = searchQuery === "" ||
-                          course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          course.description.toLowerCase().includes(searchQuery.toLowerCase());
+                         course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         course.description.toLowerCase().includes(searchQuery.toLowerCase());
     
     return matchesFilter && matchesSearch;
   });
@@ -66,20 +87,29 @@ const CoursesPage = () => {
     setOpen(false);
   };
 
+  // Check if user is instructor/lecturer
+  const canCreateCourse = user?.role === "teacher" || user?.role === "lecturer" || user?.role === "admin";
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">{user?.role === "student" ? "Meine Kurse" : "Alle Kurse"}</h1>
+          <h1 className="text-3xl font-bold">
+            {(user?.role === "teacher" || user?.role === "lecturer") 
+              ? "Meine Kurse" 
+              : "Alle Kurse"}
+          </h1>
           <p className="text-muted-foreground">
-            {user?.role === "student" 
-              ? "Entdecke und verwalte deine Kurse" 
-              : "Übersicht aller verfügbaren Kurse"}
+            {(user?.role === "teacher" || user?.role === "lecturer") 
+              ? "Verwalte deine Kurse" 
+              : "Entdecke und verwalte deine Kurse"}
           </p>
         </div>
-        {user?.role === "teacher" || user?.role === "admin" ? (
-          <Button>Neuen Kurs erstellen</Button>
-        ) : null}
+        {canCreateCourse && (
+          <Link to="/courses/create">
+            <Button>Neuen Kurs erstellen</Button>
+          </Link>
+        )}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
@@ -152,8 +182,15 @@ const CoursesPage = () => {
           <div className="col-span-full py-12 text-center">
             <h3 className="text-lg font-medium">Keine Kurse gefunden</h3>
             <p className="text-muted-foreground">
-              Versuche andere Filterkriterien oder Suchbegriffe.
+              {canCreateCourse 
+                ? "Du hast noch keine Kurse erstellt. Erstelle deinen ersten Kurs!" 
+                : "Versuche andere Filterkriterien oder Suchbegriffe."}
             </p>
+            {canCreateCourse && (
+              <Link to="/courses/create" className="mt-4 inline-block">
+                <Button>Kurs erstellen</Button>
+              </Link>
+            )}
           </div>
         )}
       </div>
