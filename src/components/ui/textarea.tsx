@@ -1,13 +1,49 @@
 
 import * as React from "react"
-
 import { cn } from "@/lib/utils"
 
 export interface TextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
+  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  storeData?: boolean;
+  dataKey?: string;
+}
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, ...props }, ref) => {
+  ({ className, storeData, dataKey, ...props }, ref) => {
+    const handleBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+      if (storeData && dataKey) {
+        // Store data when the user finishes editing
+        try {
+          const existingData = localStorage.getItem('lms-user-data') || '{}';
+          const userData = JSON.parse(existingData);
+          userData[dataKey] = e.target.value;
+          localStorage.setItem('lms-user-data', JSON.stringify(userData));
+        } catch (error) {
+          console.error("Error storing textarea data:", error);
+        }
+      }
+      
+      // Call the original onBlur if it exists
+      if (props.onBlur) {
+        props.onBlur(e);
+      }
+    };
+    
+    // Load saved data if available
+    React.useEffect(() => {
+      if (storeData && dataKey && ref && 'current' in ref && ref.current) {
+        try {
+          const existingData = localStorage.getItem('lms-user-data') || '{}';
+          const userData = JSON.parse(existingData);
+          if (userData[dataKey]) {
+            ref.current.value = userData[dataKey];
+          }
+        } catch (error) {
+          console.error("Error loading textarea data:", error);
+        }
+      }
+    }, [storeData, dataKey, ref]);
+
     return (
       <textarea
         className={cn(
@@ -15,6 +51,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           className
         )}
         ref={ref}
+        onBlur={handleBlur}
         {...props}
       />
     )

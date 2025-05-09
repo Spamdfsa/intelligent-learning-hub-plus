@@ -1,10 +1,48 @@
 
 import * as React from "react"
-
 import { cn } from "@/lib/utils"
 
-const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, type, ...props }, ref) => {
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  storeData?: boolean;
+  dataKey?: string;
+}
+
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, storeData, dataKey, ...props }, ref) => {
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+      if (storeData && dataKey) {
+        // Store data when the user finishes editing
+        try {
+          const existingData = localStorage.getItem('lms-user-data') || '{}';
+          const userData = JSON.parse(existingData);
+          userData[dataKey] = e.target.value;
+          localStorage.setItem('lms-user-data', JSON.stringify(userData));
+        } catch (error) {
+          console.error("Error storing input data:", error);
+        }
+      }
+      
+      // Call the original onBlur if it exists
+      if (props.onBlur) {
+        props.onBlur(e);
+      }
+    };
+    
+    // Load saved data if available
+    React.useEffect(() => {
+      if (storeData && dataKey && ref && 'current' in ref && ref.current) {
+        try {
+          const existingData = localStorage.getItem('lms-user-data') || '{}';
+          const userData = JSON.parse(existingData);
+          if (userData[dataKey]) {
+            ref.current.value = userData[dataKey];
+          }
+        } catch (error) {
+          console.error("Error loading input data:", error);
+        }
+      }
+    }, [storeData, dataKey, ref]);
+
     return (
       <input
         type={type}
@@ -13,6 +51,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
           className
         )}
         ref={ref}
+        onBlur={handleBlur}
         {...props}
       />
     )

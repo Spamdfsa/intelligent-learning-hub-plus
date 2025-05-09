@@ -1,10 +1,9 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChatMessage } from "@/types";
-import { Send, Bot, Loader2, Check, ArrowRight, Key } from "lucide-react";
+import { Send, Bot, Loader2, Check, ArrowRight, Key, Database } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
@@ -40,9 +39,42 @@ const AiTutor = () => {
   const [moduleSelection, setModuleSelection] = useState("Alle Module");
   const [apiKey, setApiKey] = useState("");
   const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
+  const [showUserDataDialog, setShowUserDataDialog] = useState(false);
   
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Load all user data for the AI to use
+  useEffect(() => {
+    const loadUserData = () => {
+      try {
+        // Load user data from localStorage
+        const userData = {
+          profile: JSON.parse(localStorage.getItem("lms-user") || "{}"),
+          tasks: JSON.parse(localStorage.getItem("lms-tasks") || "[]"),
+          summaries: JSON.parse(localStorage.getItem("lms-summaries") || "[]"),
+          userInput: JSON.parse(localStorage.getItem("lms-user-data") || "{}")
+        };
+        
+        setUserData(userData);
+        
+        // Update welcome message to personalize if user exists
+        if (userData.profile && userData.profile.name) {
+          setMessages([{
+            id: "welcome",
+            content: `Hallo ${userData.profile.name}! Ich bin dein KI-Tutor. Wie kann ich dir heute bei deinem Lernen helfen?`,
+            role: "assistant",
+            timestamp: new Date(),
+          }]);
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      }
+    };
+    
+    loadUserData();
+  }, []);
 
   useEffect(() => {
     // Check if API key is stored in localStorage
@@ -94,7 +126,28 @@ const AiTutor = () => {
         throw new Error("API-Schlüssel fehlt");
       }
 
-      // Call OpenAI API
+      // Call OpenAI API with enhanced context about the user data
+      const systemPrompt = `
+Du bist ein hilfreicher KI-Tutor, der Studierende in ihrem Lernprozess unterstützt. 
+Antworte kurz, informativ und freundlich auf Deutsch.
+
+${userData ? `
+Hier sind die verfügbaren Informationen über den Nutzer:
+- Name: ${userData.profile.name || 'Unbekannt'}
+- Kurse: ${userData.profile.courses?.join(', ') || 'Keine Kursinformationen verfügbar'}
+- Offene Aufgaben: ${userData.tasks?.length || 0}
+- Erstellte Zusammenfassungen: ${userData.summaries?.length || 0}
+
+Die neuesten Aufgaben sind:
+${userData.tasks?.slice(0, 3).map((t: any) => `- ${t.title}`).join('\n') || 'Keine Aufgaben'}
+
+Die neuesten Zusammenfassungen sind:
+${userData.summaries?.slice(0, 3).map((s: any) => `- ${s.title}`).join('\n') || 'Keine Zusammenfassungen'}
+`: ''}
+
+Nutze diese Informationen, um personalisierte Hilfe zu geben. Wenn Informationen fehlen oder zu alt erscheinen, frage nach einer Aktualisierung.
+      `;
+
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -106,7 +159,7 @@ const AiTutor = () => {
           messages: [
             {
               role: "system",
-              content: "Du bist ein hilfreicher KI-Tutor, der Studierende in ihrem Lernprozess unterstützt. Antworte kurz, informativ und freundlich auf Deutsch."
+              content: systemPrompt
             },
             ...messages.map(msg => ({
               role: msg.role,
@@ -428,12 +481,69 @@ const AiTutor = () => {
     navigate("/tasks");
   };
 
+  const toggleUserDataDialog = () => {
+    setShowUserDataDialog(!showUserDataDialog);
+  };
+
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">KI-Tutor</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">KI-Tutor</h1>
+        <Button variant="outline" size="sm" onClick={toggleUserDataDialog}>
+          <Database className="h-4 w-4 mr-2" />
+          Nutzerdaten-Status
+        </Button>
+      </div>
+      
       <p className="text-muted-foreground">
         Stell Fragen zu deinen Kursinhalten, generiere Quizfragen oder lass dir bei Aufgaben helfen.
       </p>
+
+      {/* User Data Status Dialog */}
+      <Dialog open={showUserDataDialog} onOpenChange={setShowUserDataDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Gespeicherte Nutzerdaten</DialogTitle>
+            <DialogDescription>
+              Diese Daten werden lokal in deinem Browser gespeichert und dem KI-Tutor zur Verfügung gestellt.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4 max-h-96 overflow-y-auto">
+            {userData ? (
+              <>
+                <div>
+                  <h3 className="font-medium mb-1">Profil:</h3>
+                  <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">
+                    {JSON.stringify(userData.profile, null, 2)}
+                  </pre>
+                </div>
+                <div>
+                  <h3 className="font-medium mb-1">Aufgaben ({userData.tasks?.length || 0}):</h3>
+                  <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">
+                    {JSON.stringify(userData.tasks?.slice(0, 3), null, 2)}
+                    {userData.tasks?.length > 3 ? `\n... und ${userData.tasks.length - 3} weitere` : ""}
+                  </pre>
+                </div>
+                <div>
+                  <h3 className="font-medium mb-1">Zusammenfassungen ({userData.summaries?.length || 0}):</h3>
+                  <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">
+                    {JSON.stringify(userData.summaries?.slice(0, 3), null, 2)}
+                    {userData.summaries?.length > 3 ? `\n... und ${userData.summaries.length - 3} weitere` : ""}
+                  </pre>
+                </div>
+                <div>
+                  <h3 className="font-medium mb-1">Gespeicherte Eingaben:</h3>
+                  <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">
+                    {JSON.stringify(userData.userInput, null, 2)}
+                  </pre>
+                </div>
+              </>
+            ) : (
+              <p>Keine Daten gefunden.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* API Key Dialog */}
       <Dialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
@@ -452,6 +562,8 @@ const AiTutor = () => {
                 placeholder="sk-..."
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
+                storeData={true}
+                dataKey="openai-api-key"
               />
             </div>
             <p className="text-xs text-muted-foreground">
@@ -525,6 +637,8 @@ const AiTutor = () => {
                       onChange={(e) => setInput(e.target.value)}
                       className="resize-none"
                       rows={2}
+                      storeData={true}
+                      dataKey="chat-last-message"
                     />
                     <Button
                       type="submit"
@@ -551,9 +665,10 @@ const AiTutor = () => {
               <div className="space-y-2">
                 <p className="text-sm font-medium">Wähle einen Kurs:</p>
                 <select 
-                  className="w-full border rounded p-2"
+                  className="w-full border rounded p-2 dark:bg-secondary/80 dark:border-secondary dark:text-foreground"
                   value={courseSelection}
                   onChange={(e) => setCourseSelection(e.target.value)}
+                  data-key="quiz-course"
                 >
                   <option>Einführung in die Informatik</option>
                   <option>Datenbanksysteme</option>
@@ -564,9 +679,10 @@ const AiTutor = () => {
               <div className="space-y-2">
                 <p className="text-sm font-medium">Anzahl der Fragen:</p>
                 <select 
-                  className="w-full border rounded p-2"
+                  className="w-full border rounded p-2 dark:bg-secondary/80 dark:border-secondary dark:text-foreground"
                   value={questionCount}
                   onChange={(e) => setQuestionCount(e.target.value)}
+                  data-key="quiz-count"
                 >
                   <option>5</option>
                   <option>10</option>
@@ -577,9 +693,10 @@ const AiTutor = () => {
               <div className="space-y-2">
                 <p className="text-sm font-medium">Schwierigkeitsgrad:</p>
                 <select 
-                  className="w-full border rounded p-2"
+                  className="w-full border rounded p-2 dark:bg-secondary/80 dark:border-secondary dark:text-foreground"
                   value={difficulty}
                   onChange={(e) => setDifficulty(e.target.value)}
+                  data-key="quiz-difficulty"
                 >
                   <option>Leicht</option>
                   <option>Mittel</option>
@@ -640,9 +757,10 @@ const AiTutor = () => {
               <div className="space-y-2">
                 <p className="text-sm font-medium">Wähle einen Kurs:</p>
                 <select 
-                  className="w-full border rounded p-2"
+                  className="w-full border rounded p-2 dark:bg-secondary/80 dark:border-secondary dark:text-foreground"
                   value={courseSelection}
                   onChange={(e) => setCourseSelection(e.target.value)}
+                  data-key="summary-course"
                 >
                   <option>Einführung in die Informatik</option>
                   <option>Datenbanksysteme</option>
@@ -653,9 +771,10 @@ const AiTutor = () => {
               <div className="space-y-2">
                 <p className="text-sm font-medium">Modul auswählen:</p>
                 <select 
-                  className="w-full border rounded p-2"
+                  className="w-full border rounded p-2 dark:bg-secondary/80 dark:border-secondary dark:text-foreground"
                   value={moduleSelection}
                   onChange={(e) => setModuleSelection(e.target.value)}
+                  data-key="summary-module"
                 >
                   <option>Alle Module</option>
                   <option>Modul 1: Grundlagen</option>
@@ -666,9 +785,10 @@ const AiTutor = () => {
               <div className="space-y-2">
                 <p className="text-sm font-medium">Zusammenfassungsstil:</p>
                 <select 
-                  className="w-full border rounded p-2"
+                  className="w-full border rounded p-2 dark:bg-secondary/80 dark:border-secondary dark:text-foreground"
                   value={summaryStyle}
                   onChange={(e) => setSummaryStyle(e.target.value)}
+                  data-key="summary-style"
                 >
                   <option>Kurz und prägnant</option>
                   <option>Detailliert</option>
