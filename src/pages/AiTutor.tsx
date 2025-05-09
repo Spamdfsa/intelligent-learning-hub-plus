@@ -25,7 +25,8 @@ const AiTutor = () => {
       id: "welcome",
       content: "Hallo! Ich bin dein KI-Tutor. Wie kann ich dir heute bei deinem Lernen helfen?",
       role: "assistant",
-      timestamp: new Date(),
+      sender: "ai",
+      timestamp: new Date().toISOString(),
     },
   ]);
   const [input, setInput] = useState("");
@@ -65,7 +66,8 @@ const AiTutor = () => {
             id: "welcome",
             content: `Hallo ${userData.profile.name}! Ich bin dein KI-Tutor. Wie kann ich dir heute bei deinem Lernen helfen?`,
             role: "assistant",
-            timestamp: new Date(),
+            sender: "ai",
+            timestamp: new Date().toISOString(),
           }]);
         }
       } catch (error) {
@@ -113,7 +115,8 @@ const AiTutor = () => {
       id: `user-${Date.now()}`,
       content: input,
       role: "user",
-      timestamp: new Date(),
+      sender: "student",
+      timestamp: new Date().toISOString(),
     };
     
     setMessages((prev) => [...prev, userMessage]);
@@ -187,7 +190,8 @@ Nutze diese Informationen, um personalisierte Hilfe zu geben. Wenn Informationen
         id: `assistant-${Date.now()}`,
         content: aiResponse,
         role: "assistant",
-        timestamp: new Date(),
+        sender: "ai",
+        timestamp: new Date().toISOString(),
       };
       
       setMessages((prev) => [...prev, aiMessage]);
@@ -215,7 +219,8 @@ Nutze diese Informationen, um personalisierte Hilfe zu geben. Wenn Informationen
           id: `assistant-${Date.now()}`,
           content: `${randomResponse} ${input.includes("?") ? "Hast du noch weitere Fragen?" : "Kann ich dir bei etwas anderem helfen?"}`,
           role: "assistant",
-          timestamp: new Date(),
+          sender: "ai",
+          timestamp: new Date().toISOString(),
         };
         
         setMessages((prev) => [...prev, aiMessage]);

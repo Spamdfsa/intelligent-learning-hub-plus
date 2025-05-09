@@ -11,7 +11,8 @@ interface CourseCardProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const CourseCard = ({ course, showProgress = true, className, ...props }: CourseCardProps) => {
-  const bannerColorClass = `bg-${course.bannerColor}-500`;
+  // Use optional chaining to safely access the bannerColor property
+  const bannerColorClass = course.bannerColor ? `bg-${course.bannerColor}-500` : "bg-blue-500";
 
   return (
     <div className={cn("course-card group", className)} {...props}>
@@ -26,7 +27,7 @@ const CourseCard = ({ course, showProgress = true, className, ...props }: Course
         </div>
         <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
           <span>{course.level}</span>
-          <span>{course.duration}</span>
+          <span>{course.duration || "Keine Angabe"}</span>
         </div>
         {course.progress !== undefined && showProgress && (
           <div className="mt-2 space-y-1">
@@ -42,7 +43,7 @@ const CourseCard = ({ course, showProgress = true, className, ...props }: Course
           <Button variant="secondary" size="sm">Zum Kurs</Button>
         </Link>
         <div className="flex items-center text-xs text-muted-foreground">
-          <span>{course.enrolledStudents} Teilnehmer</span>
+          <span>{course.enrolledStudents || course.enrolled || 0} Teilnehmer</span>
         </div>
       </div>
     </div>

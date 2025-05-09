@@ -1,3 +1,4 @@
+
 export type UserRole = "student" | "teacher" | "lecturer" | "admin";
 
 export interface User {
@@ -6,6 +7,14 @@ export interface User {
   email: string;
   role: UserRole;
   avatar: string | null;
+  courses?: string[];
+}
+
+export interface Module {
+  id: string;
+  title: string;
+  description: string;
+  tasks: Task[];
 }
 
 export interface Course {
@@ -19,6 +28,13 @@ export interface Course {
   enrolled: number;
   image: string;
   created_at: string;
+  // Added properties to match usage in components
+  instructorId?: string;  // Alternative to instructor_id for backward compatibility
+  duration?: string;
+  enrolledStudents?: number;
+  category?: string;
+  bannerColor?: string;
+  modules?: Module[];
 }
 
 export interface Material {
@@ -32,6 +48,13 @@ export interface Material {
   created_at: string;
 }
 
+export interface Question {
+  id: string;
+  question: string;
+  options: string[];
+  correctOption: number;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -43,6 +66,15 @@ export interface Task {
   submission?: string;
   grade?: string;
   feedback?: string;
+  // Added properties to match usage in components
+  type?: "reading" | "video" | "quiz" | "assignment";
+  completed?: boolean;
+  content?: string;
+  videoUrl?: string;
+  questions?: Question[];
+  dueDate?: string;  // Alternative to due_date for backward compatibility
+  courseId?: string;  // Alternative to course_id for backward compatibility
+  moduleId?: string;
 }
 
 export interface StudentChat {
@@ -56,5 +88,6 @@ export interface ChatMessage {
   id: string;
   sender: "student" | "ai";
   content: string;
-  timestamp: string;
+  timestamp: string | Date;
+  role?: "user" | "assistant"; // Added role for compatibility with OpenAI API format
 }

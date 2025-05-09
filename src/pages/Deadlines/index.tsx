@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { format, parseISO, isBefore } from "date-fns";
 import { de } from "date-fns/locale";
@@ -31,12 +30,14 @@ const DeadlinesPage = () => {
 
       courses.forEach((course: any) => {
         course.modules.forEach((module: any) => {
-          module.tasks.forEach((task: Task) => {
-            if (task.dueDate) {
+          module.tasks.forEach((task: any) => {
+            // Check both due_date and dueDate for compatibility
+            if (task.due_date || task.dueDate) {
               allTasks.push({
                 ...task,
-                courseId: course.id,
-                moduleId: module.id
+                due_date: task.due_date || task.dueDate, // Ensure due_date is always set
+                course_id: task.course_id || task.courseId || course.id, // Ensure course_id is always set
+                moduleId: task.moduleId || module.id // Keep moduleId for navigation
               });
             }
           });
@@ -90,8 +91,9 @@ const DeadlinesPage = () => {
 
   const filteredTasks = selectedDate
     ? tasks.filter((task) => {
-        if (!task.dueDate) return false;
-        const dueDate = parseISO(task.dueDate);
+        const dueDateStr = task.due_date || task.dueDate;
+        if (!dueDateStr) return false;
+        const dueDate = parseISO(dueDateStr);
         return (
           dueDate.getDate() === selectedDate.getDate() &&
           dueDate.getMonth() === selectedDate.getMonth() &&
@@ -101,18 +103,21 @@ const DeadlinesPage = () => {
     : tasks;
 
   const sortedTasks = [...filteredTasks].sort((a, b) => {
-    if (!a.dueDate || !b.dueDate) return 0;
-    return parseISO(a.dueDate).getTime() - parseISO(b.dueDate).getTime();
+    const dueDateA = a.due_date || a.dueDate;
+    const dueDateB = b.due_date || b.dueDate;
+    if (!dueDateA || !dueDateB) return 0;
+    return parseISO(dueDateA).getTime() - parseISO(dueDateB).getTime();
   });
 
   const tasksWithStatus = sortedTasks.map((task) => ({
     ...task,
-    status: task.dueDate ? getDeadlineStatus(task.dueDate) : "upcoming",
+    status: (task.status as string) || ((task.due_date || task.dueDate) ? getDeadlineStatus(task.due_date || task.dueDate as string) : "upcoming"),
   }));
 
   const handleTaskClick = (task: Task) => {
-    if (task.courseId && task.moduleId) {
-      navigate(`/courses/${task.courseId}`);
+    const courseId = task.course_id || task.courseId;
+    if (courseId) {
+      navigate(`/courses/${courseId}`);
     }
   };
 
@@ -137,7 +142,7 @@ const DeadlinesPage = () => {
             <TabsContent value="all" className="space-y-4">
               {tasksWithStatus.length > 0 ? (
                 tasksWithStatus.map((task) => (
-                  <Card key={task.id} className="cursor-pointer" onClick={() => handleTaskClick(task)}>
+                  <Card key={task.id} className="cursor-pointer" onClick={() => handleTaskClick(task as Task)}>
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
@@ -148,12 +153,12 @@ const DeadlinesPage = () => {
                           </p>
                         </div>
                         <div className="flex flex-col items-end space-y-2">
-                          <Badge variant={getBadgeVariant(task.status)}>
-                            {getStatusLabel(task.status)}
+                          <Badge variant={getBadgeVariant(task.status as string)}>
+                            {getStatusLabel(task.status as string)}
                           </Badge>
-                          {task.dueDate && (
+                          {(task.due_date || task.dueDate) && (
                             <span className="text-xs text-muted-foreground">
-                              Fällig am: {format(parseISO(task.dueDate), "dd.MM.yyyy", { locale: de })}
+                              Fällig am: {format(parseISO(task.due_date || task.dueDate as string), "dd.MM.yyyy", { locale: de })}
                             </span>
                           )}
                         </div>

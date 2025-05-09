@@ -161,13 +161,13 @@ const CourseDetail = () => {
         <div>
           <h1 className="text-3xl font-bold">{course.title}</h1>
           <p className="text-muted-foreground">
-            Dozent: {course.instructor} • {course.level} • {course.duration}
+            Dozent: {course.instructor} • {course.level} • {course.duration || "Keine Angabe"}
           </p>
         </div>
         {user?.role === "student" && (
           <Button>Fortsetzen</Button>
         )}
-        {user?.role === "teacher" && course.instructorId === user.id && (
+        {user?.role === "teacher" && (course.instructor_id === user.id || course.instructorId === user.id) && (
           <Button>Kurs bearbeiten</Button>
         )}
         {user?.role === "admin" && (
@@ -197,61 +197,67 @@ const CourseDetail = () => {
         </TabsList>
 
         <TabsContent value="modules" className="space-y-4 pt-4">
-          <Accordion type="single" collapsible className="w-full">
-            {course.modules.map((module, moduleIndex) => (
-              <AccordionItem key={module.id} value={`module-${moduleIndex}`}>
-                <AccordionTrigger className="py-4 px-6 bg-card rounded-t-lg border">
-                  <div className="flex items-center gap-3">
-                    <span className="font-medium">
-                      Modul {moduleIndex + 1}: {module.title}
-                    </span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-0 pt-1 pb-0">
-                  <div className="space-y-1 rounded-b-lg overflow-hidden border border-t-0">
-                    {module.tasks.map((task, taskIndex) => (
-                      <div 
-                        key={task.id} 
-                        className={cn(
-                          "task-item",
-                          task.completed && "task-item-completed"
-                        )}
-                      >
-                        <div className="flex items-center gap-3 flex-1">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
-                            {task.completed ? (
-                              <CheckCircle className="h-5 w-5" />
-                            ) : (
-                              renderTaskIcon(task.type)
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-medium">
-                              {moduleIndex + 1}.{taskIndex + 1} {task.title}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {task.type === "reading" && "Leseaufgabe"}
-                              {task.type === "video" && "Video"}
-                              {task.type === "quiz" && "Quiz"}
-                              {task.type === "assignment" && "Aufgabe"}
-                              {task.dueDate && ` • Fällig am: ${task.dueDate}`}
-                            </p>
-                          </div>
-                        </div>
-                        <Button 
-                          variant={task.completed ? "outline" : "secondary"} 
-                          size="sm"
-                          onClick={() => handleTaskClick(task)}
+          {course.modules && course.modules.length > 0 ? (
+            <Accordion type="single" collapsible className="w-full">
+              {course.modules.map((module: Module, moduleIndex) => (
+                <AccordionItem key={module.id} value={`module-${moduleIndex}`}>
+                  <AccordionTrigger className="py-4 px-6 bg-card rounded-t-lg border">
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium">
+                        Modul {moduleIndex + 1}: {module.title}
+                      </span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-0 pt-1 pb-0">
+                    <div className="space-y-1 rounded-b-lg overflow-hidden border border-t-0">
+                      {module.tasks.map((task: Task, taskIndex) => (
+                        <div 
+                          key={task.id} 
+                          className={cn(
+                            "task-item",
+                            task.completed && "task-item-completed"
+                          )}
                         >
-                          {task.completed ? "Wiederholen" : "Starten"}
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+                              {task.completed ? (
+                                <CheckCircle className="h-5 w-5" />
+                              ) : (
+                                renderTaskIcon(task.type)
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-medium">
+                                {moduleIndex + 1}.{taskIndex + 1} {task.title}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {task.type === "reading" && "Leseaufgabe"}
+                                {task.type === "video" && "Video"}
+                                {task.type === "quiz" && "Quiz"}
+                                {task.type === "assignment" && "Aufgabe"}
+                                {(task.due_date || task.dueDate) && ` • Fällig am: ${task.due_date || task.dueDate}`}
+                              </p>
+                            </div>
+                          </div>
+                          <Button 
+                            variant={task.completed ? "outline" : "secondary"} 
+                            size="sm"
+                            onClick={() => handleTaskClick(task)}
+                          >
+                            {task.completed ? "Wiederholen" : "Starten"}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          ) : (
+            <p className="text-center py-8 text-muted-foreground">
+              Für diesen Kurs wurden noch keine Module erstellt.
+            </p>
+          )}
         </TabsContent>
 
         <TabsContent value="overview" className="space-y-4 pt-4">
@@ -287,7 +293,7 @@ const CourseDetail = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="flex flex-col">
                     <span className="text-sm text-muted-foreground">Kategorie</span>
-                    <span>{course.category}</span>
+                    <span>{course.category || "Allgemein"}</span>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-sm text-muted-foreground">Niveau</span>
@@ -295,11 +301,11 @@ const CourseDetail = () => {
                   </div>
                   <div className="flex flex-col">
                     <span className="text-sm text-muted-foreground">Dauer</span>
-                    <span>{course.duration}</span>
+                    <span>{course.duration || "Keine Angabe"}</span>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-sm text-muted-foreground">Teilnehmer</span>
-                    <span>{course.enrolledStudents}</span>
+                    <span>{course.enrolledStudents || course.enrolled || 0}</span>
                   </div>
                 </div>
               </div>
@@ -317,7 +323,7 @@ const CourseDetail = () => {
                 </div>
                 <div>
                   <p className="font-medium">{course.instructor}</p>
-                  <p className="text-sm text-muted-foreground">Dozent für {course.category}</p>
+                  <p className="text-sm text-muted-foreground">Dozent für {course.category || "Allgemeine Fächer"}</p>
                 </div>
               </div>
             </CardContent>
