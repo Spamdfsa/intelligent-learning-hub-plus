@@ -10,8 +10,12 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import CoursesPage from "./pages/Courses";
 import CourseDetail from "./pages/Courses/CourseDetail";
+import CreateCourse from "./pages/Courses/CreateCourse";
+import MaterialCreate from "./pages/Materials/CreateMaterial";
 import AiTutor from "./pages/AiTutor";
 import TasksPage from "./pages/Tasks";
+import StudentChatsPage from "./pages/StudentChats";
+import AssignmentsPage from "./pages/Assignments";
 import SummariesPage from "./pages/Summaries";
 import ModulesPage from "./pages/Modules";
 import SettingsPage from "./pages/Settings";
@@ -37,15 +41,18 @@ const App = () => (
               <Route path="/courses" element={<CoursesPage />} />
               <Route path="/courses/teaching" element={<CoursesPage />} />
               <Route path="/courses/manage" element={<CoursesPage />} />
+              <Route path="/courses/create" element={<CreateCourse />} />
               <Route path="/courses/:courseId" element={<CourseDetail />} />
+              <Route path="/materials/create" element={<MaterialCreate />} />
               <Route path="/ai-tutor" element={<AiTutor />} />
               <Route path="/tasks" element={<TasksPage />} />
+              <Route path="/student-chats" element={<StudentChatsPage />} />
+              <Route path="/assignments" element={<AssignmentsPage />} />
               <Route path="/modules" element={<ModulesPage />} />
               <Route path="/summaries" element={<SummariesPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/deadlines" element={<DeadlinesPage />} />
               <Route path="/progress" element={<ProgressPage />} />
-              <Route path="/assignments" element={<Dashboard />} />
               <Route path="/students" element={<Dashboard />} />
               <Route path="/users" element={<Dashboard />} />
               <Route path="/analytics" element={<Dashboard />} />

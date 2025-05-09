@@ -14,9 +14,10 @@ import {
   MessageSquare, 
   Settings,
   User as UserIcon,
-  Users 
+  Users,
+  Edit,
+  FilePlus
 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -37,6 +38,18 @@ export function Sidebar({ className, ...props }: SidebarProps) {
     { title: "Kursverwaltung", href: "/courses/manage", icon: <BookOpen className="h-5 w-5" /> },
     { title: "Benutzerverwaltung", href: "/users", icon: <Users className="h-5 w-5" /> },
     { title: "Analytik", href: "/analytics", icon: <BarChart className="h-5 w-5" /> },
+    { title: "Einstellungen", href: "/settings", icon: <Settings className="h-5 w-5" /> },
+  ];
+
+  const lecturerNavItems = [
+    { title: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
+    { title: "Meine Kurse", href: "/courses/teaching", icon: <BookOpen className="h-5 w-5" /> },
+    { title: "Kurs erstellen", href: "/courses/create", icon: <Edit className="h-5 w-5" /> },
+    { title: "Material hinzufügen", href: "/materials/create", icon: <FilePlus className="h-5 w-5" /> },
+    { title: "Aufgabenbewertung", href: "/assignments", icon: <BookCheck className="h-5 w-5" /> },
+    { title: "Kursteilnehmer", href: "/students", icon: <GraduationCap className="h-5 w-5" /> },
+    { title: "Studentenchats", href: "/student-chats", icon: <MessageSquare className="h-5 w-5" /> },
+    { title: "Profil", href: "/profile", icon: <UserIcon className="h-5 w-5" /> },
     { title: "Einstellungen", href: "/settings", icon: <Settings className="h-5 w-5" /> },
   ];
 
@@ -64,9 +77,11 @@ export function Sidebar({ className, ...props }: SidebarProps) {
   // Select navigation items based on user role
   const navItems = userRole === "admin" 
     ? adminNavItems 
-    : userRole === "teacher" 
-      ? teacherNavItems 
-      : studentNavItems;
+    : userRole === "lecturer"
+      ? lecturerNavItems
+      : userRole === "teacher" 
+        ? teacherNavItems 
+        : studentNavItems;
 
   return (
     <aside className={cn("pb-12 w-64 border-r h-screen flex flex-col", className)} {...props}>
@@ -76,29 +91,27 @@ export function Sidebar({ className, ...props }: SidebarProps) {
             Navigation
           </h2>
         </div>
-        <ScrollArea className="flex-1">
-          <div className="px-4 py-2">
-            <div className="space-y-1">
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.href}
-                  to={item.href}
-                  className={({ isActive }) =>
-                    cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                    )
-                  }
-                >
-                  {item.icon}
-                  {item.title}
-                </NavLink>
-              ))}
-            </div>
+        <div className="px-4 py-2 flex-1">
+          <div className="space-y-1">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.href}
+                to={item.href}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  )
+                }
+              >
+                {item.icon}
+                {item.title}
+              </NavLink>
+            ))}
           </div>
-        </ScrollArea>
+        </div>
       </div>
     </aside>
   );

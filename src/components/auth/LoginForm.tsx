@@ -7,10 +7,18 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { UserRole } from "@/types";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState<UserRole>("student");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -25,12 +33,14 @@ const LoginForm = () => {
       setTimeout(() => {
         // Mock login logic
         if (email && password) {
-          let role: UserRole = 'student';
+          let userRole = role;
           
           if (email.includes('admin')) {
-            role = 'admin';
+            userRole = 'admin';
+          } else if (email.includes('lecturer')) {
+            userRole = 'lecturer';
           } else if (email.includes('teacher')) {
-            role = 'teacher';
+            userRole = 'teacher';
           }
           
           // Store the user info in local storage for our mock authentication
@@ -38,7 +48,7 @@ const LoginForm = () => {
             id: '1',
             name: email.split('@')[0],
             email,
-            role,
+            role: userRole,
             avatar: null
           }));
           
@@ -104,13 +114,27 @@ const LoginForm = () => {
               required
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="role">Rolle</Label>
+            <Select value={role} onValueChange={(value) => setRole(value as UserRole)}>
+              <SelectTrigger id="role">
+                <SelectValue placeholder="Rolle auswählen" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="student">Student</SelectItem>
+                <SelectItem value="teacher">Lehrkraft</SelectItem>
+                <SelectItem value="lecturer">Dozent</SelectItem>
+                <SelectItem value="admin">Administrator</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Anmeldung..." : "Anmelden"}
           </Button>
           <p className="text-sm text-center text-muted-foreground">
-            Hinweis: Verwende eine E-Mail mit "admin@", "teacher@" oder beliebig für Student-Rolle.
+            Wähle eine Rolle und gib beliebige Anmeldedaten ein, um fortzufahren.
           </p>
         </CardFooter>
       </form>

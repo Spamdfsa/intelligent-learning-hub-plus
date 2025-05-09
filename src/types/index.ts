@@ -1,14 +1,11 @@
-
-export type UserRole = 'admin' | 'teacher' | 'student';
+export type UserRole = "student" | "teacher" | "lecturer" | "admin";
 
 export interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
-  avatar?: string;
-  bio?: string;
-  birthDate?: string;
+  avatar: string | null;
 }
 
 export interface Course {
@@ -16,68 +13,48 @@ export interface Course {
   title: string;
   description: string;
   instructor: string;
-  instructorId: string;
-  bannerColor: string;
-  modules: Module[];
-  enrolledStudents: number;
-  progress?: number;
-  category: string;
-  level: 'Beginner' | 'Intermediate' | 'Advanced';
-  duration: string;
+  instructor_id: string;
+  level: "Beginner" | "Intermediate" | "Advanced";
+  progress: number;
+  enrolled: number;
+  image: string;
+  created_at: string;
 }
 
-export interface Module {
+export interface Material {
   id: string;
   title: string;
   description: string;
-  tasks: Task[];
-  completed?: boolean;
+  type: "pdf" | "document" | "video" | "link";
+  url: string;
+  created_by: string;
+  course_id: string;
+  created_at: string;
 }
 
 export interface Task {
   id: string;
   title: string;
-  type: 'reading' | 'video' | 'quiz' | 'assignment';
-  completed?: boolean;
-  description?: string;
-  dueDate?: string;
-  questions?: QuizQuestion[];
-  content?: string;
-  videoUrl?: string;
-  courseId?: string;
-  moduleId?: string;
+  description: string;
+  course_id: string;
+  due_date: string;
+  created_by: string;
+  status: "pending" | "submitted" | "graded";
+  submission?: string;
+  grade?: string;
+  feedback?: string;
 }
 
-export interface QuizQuestion {
+export interface StudentChat {
   id: string;
-  question: string;
-  options: string[];
-  correctOption: number;
+  student_id: string;
+  student_name: string;
+  messages: ChatMessage[];
 }
 
 export interface ChatMessage {
   id: string;
+  sender: "student" | "ai";
   content: string;
-  role: 'user' | 'assistant';
-  timestamp: Date;
-}
-
-export interface CompletedModule {
-  id: string;
-  courseId: string;
-  moduleId: string;
-  title: string;
-  completedDate: string;
-  grade?: number;
-}
-
-export interface UserSetting {
-  id: string;
-  name: string;
-  description: string;
-  enabled: boolean;
-  type: 'toggle' | 'select' | 'input';
-  options?: string[];
-  value?: string;
-  category: 'appearance' | 'notifications' | 'privacy' | 'account';
+  timestamp: string;
 }
