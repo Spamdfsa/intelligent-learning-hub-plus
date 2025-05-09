@@ -59,21 +59,28 @@ export interface Task {
   id: string;
   title: string;
   description: string;
-  course_id: string;
-  due_date: string;
-  created_by: string;
-  status: "pending" | "submitted" | "graded";
+  
+  // Make required fields optional when the alternative field is used
+  course_id?: string;
+  courseId?: string;  // Alternative to course_id
+  
+  due_date?: string;
+  dueDate?: string;  // Alternative to due_date
+  
+  created_by?: string;
+  status?: "pending" | "submitted" | "graded";
+  
+  // Optional fields
   submission?: string;
   grade?: string;
   feedback?: string;
-  // Added properties to match usage in components
+  
+  // Fields used in components
   type?: "reading" | "video" | "quiz" | "assignment";
   completed?: boolean;
   content?: string;
   videoUrl?: string;
   questions?: Question[];
-  dueDate?: string;  // Alternative to due_date for backward compatibility
-  courseId?: string;  // Alternative to course_id for backward compatibility
   moduleId?: string;
 }
 

@@ -29,7 +29,7 @@ const DeadlinesPage = () => {
       const allTasks: Task[] = [];
 
       courses.forEach((course: any) => {
-        course.modules.forEach((module: any) => {
+        course.modules?.forEach((module: any) => {
           module.tasks.forEach((task: any) => {
             // Check both due_date and dueDate for compatibility
             if (task.due_date || task.dueDate) {
@@ -178,7 +178,7 @@ const DeadlinesPage = () => {
                 tasksWithStatus
                   .filter(t => t.status !== "overdue")
                   .map((task) => (
-                    <Card key={task.id} className="cursor-pointer" onClick={() => handleTaskClick(task)}>
+                    <Card key={task.id} className="cursor-pointer" onClick={() => handleTaskClick(task as Task)}>
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div>
@@ -189,12 +189,12 @@ const DeadlinesPage = () => {
                             </p>
                           </div>
                           <div className="flex flex-col items-end space-y-2">
-                            <Badge variant={getBadgeVariant(task.status)}>
-                              {getStatusLabel(task.status)}
+                            <Badge variant={getBadgeVariant(task.status as string)}>
+                              {getStatusLabel(task.status as string)}
                             </Badge>
-                            {task.dueDate && (
+                            {(task.due_date || task.dueDate) && (
                               <span className="text-xs text-muted-foreground">
-                                Fällig am: {format(parseISO(task.dueDate), "dd.MM.yyyy", { locale: de })}
+                                Fällig am: {format(parseISO(task.due_date || task.dueDate as string), "dd.MM.yyyy", { locale: de })}
                               </span>
                             )}
                           </div>
@@ -214,7 +214,7 @@ const DeadlinesPage = () => {
                 tasksWithStatus
                   .filter(t => t.status === "overdue")
                   .map((task) => (
-                    <Card key={task.id} className="cursor-pointer" onClick={() => handleTaskClick(task)}>
+                    <Card key={task.id} className="cursor-pointer" onClick={() => handleTaskClick(task as Task)}>
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div>
@@ -228,9 +228,9 @@ const DeadlinesPage = () => {
                             <Badge variant="destructive">
                               Überfällig
                             </Badge>
-                            {task.dueDate && (
+                            {(task.due_date || task.dueDate) && (
                               <span className="text-xs text-muted-foreground">
-                                Fällig am: {format(parseISO(task.dueDate), "dd.MM.yyyy", { locale: de })}
+                                Fällig am: {format(parseISO(task.due_date || task.dueDate as string), "dd.MM.yyyy", { locale: de })}
                               </span>
                             )}
                           </div>
