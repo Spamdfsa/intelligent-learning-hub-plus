@@ -22,16 +22,16 @@ export interface Course {
   title: string;
   description: string;
   instructor: string;
-  instructor_id: string;
+  instructor_id?: string;
+  instructorId?: string;  // Alternative to instructor_id
   level: "Beginner" | "Intermediate" | "Advanced";
-  progress: number;
-  enrolled: number;
-  image: string;
-  created_at: string;
-  // Added properties to match usage in components
-  instructorId?: string;  // Alternative to instructor_id for backward compatibility
+  progress?: number;
+  enrolled?: number;
+  enrolledStudents?: number;  // Alternative to enrolled
+  image?: string;
+  created_at?: string;
+  // Additional optional properties used in components
   duration?: string;
-  enrolledStudents?: number;
   category?: string;
   bannerColor?: string;
   modules?: Module[];
@@ -97,4 +97,25 @@ export interface ChatMessage {
   content: string;
   timestamp: string | Date;
   role?: "user" | "assistant"; // Added role for compatibility with OpenAI API format
+}
+
+// Add missing interfaces for other components
+export interface CompletedModule {
+  id: string;
+  courseId: string;
+  moduleId: string;
+  title: string;
+  completedDate: string;
+  grade?: number;
+}
+
+export interface UserSetting {
+  id: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+  type: "toggle" | "select" | "input";
+  options?: string[];
+  value?: string;
+  category: "appearance" | "notifications" | "privacy" | "account";
 }

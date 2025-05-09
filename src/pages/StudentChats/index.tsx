@@ -1,200 +1,223 @@
-
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect, useRef } from "react";
+import { v4 as uuidv4 } from 'uuid';
+import { User, StudentChat, ChatMessage } from "@/types";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { StudentChat, ChatMessage } from "@/types";
-import { User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { format } from 'date-fns';
+import { useToast } from "@/hooks/use-toast";
 
 const StudentChatsPage = () => {
+  const [user, setUser] = useState<User | null>(null);
   const [studentChats, setStudentChats] = useState<StudentChat[]>([]);
-  const [selectedChat, setSelectedChat] = useState<string | null>(null);
-  const [message, setMessage] = useState("");
+  const [selectedChat, setSelectedChat] = useState<StudentChat | null>(null);
+  const [newMessage, setNewMessage] = useState<string>("");
+  const chatBottomRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Load chats from localStorage
-    const chatsJson = localStorage.getItem("lms-student-chats");
-    if (chatsJson) {
-      const chats = JSON.parse(chatsJson);
-      setStudentChats(chats);
-      if (chats.length > 0) {
-        setSelectedChat(chats[0].id);
-      }
-    } else {
-      // Create mock data if none exists
-      const mockChats: StudentChat[] = [
-        {
-          id: "chat1",
-          student_id: "student1",
-          student_name: "Max Mustermann",
-          messages: [
-            {
-              id: "msg1",
-              sender: "student",
-              content: "Hallo! Ich habe eine Frage zur letzten Vorlesung.",
-              timestamp: "2023-05-10T10:30:00Z"
-            },
-            {
-              id: "msg2",
-              sender: "ai",
-              content: "Hallo Max! Natürlich, wie kann ich dir helfen?",
-              timestamp: "2023-05-10T10:31:00Z"
-            }
-          ]
-        },
-        {
-          id: "chat2",
-          student_id: "student2",
-          student_name: "Anna Schmidt",
-          messages: [
-            {
-              id: "msg3",
-              sender: "student",
-              content: "Kann mir jemand bei der Übungsaufgabe 3.2 helfen?",
-              timestamp: "2023-05-11T14:20:00Z"
-            },
-            {
-              id: "msg4",
-              sender: "ai",
-              content: "Hallo Anna! Ich schaue mir die Aufgabe an. Was genau verstehst du nicht?",
-              timestamp: "2023-05-11T14:21:00Z"
-            }
-          ]
-        }
-      ];
-      setStudentChats(mockChats);
-      setSelectedChat(mockChats[0].id);
-      localStorage.setItem("lms-student-chats", JSON.stringify(mockChats));
+    // Get user from localStorage
+    const storedUser = localStorage.getItem("lms-user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
     }
+
+    // Mock student chats data
+    const mockStudentChats: StudentChat[] = [
+      {
+        id: "chat1",
+        student_id: "student1",
+        student_name: "Max Mustermann",
+        messages: [
+          {
+            id: uuidv4(),
+            sender: "student",
+            content: "Hallo, ich habe eine Frage zur Aufgabe 1.",
+            timestamp: new Date().toISOString(),
+          },
+          {
+            id: uuidv4(),
+            sender: "ai",
+            content: "Hallo Max, natürlich! Was ist deine Frage?",
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      },
+      {
+        id: "chat2",
+        student_id: "student2",
+        student_name: "Anna Schmidt",
+        messages: [
+          {
+            id: uuidv4(),
+            sender: "student",
+            content: "Ich verstehe das Konzept von Polymorphismus nicht ganz.",
+            timestamp: new Date().toISOString(),
+          },
+          {
+            id: uuidv4(),
+            sender: "ai",
+            content: "Kein Problem, Anna! Polymorphismus bedeutet, dass ein Objekt viele Formen annehmen kann.",
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      },
+    ];
+
+    setStudentChats(mockStudentChats);
+    setSelectedChat(mockStudentChats[0]); // Select the first chat by default
   }, []);
 
-  const getCurrentChat = () => {
-    return studentChats.find(chat => chat.id === selectedChat);
-  };
-
-  const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-  };
+  useEffect(() => {
+    // Scroll to bottom when a new message is added
+    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [selectedChat?.messages]);
 
   const handleSendMessage = () => {
-    if (!message.trim() || !selectedChat) return;
-
-    const newMessage: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      sender: "ai", // Lecturer responses are stored as "ai" in this demo
-      content: message.trim(),
-      timestamp: new Date().toISOString()
+    if (!newMessage.trim()) return;
+  
+    const newMsg: ChatMessage = {
+      id: uuidv4(),
+      sender: "student",
+      content: newMessage,
+      timestamp: new Date().toISOString(), // Convert Date to ISO string format
     };
-
-    const updatedChats = studentChats.map(chat => {
-      if (chat.id === selectedChat) {
-        return {
-          ...chat,
-          messages: [...chat.messages, newMessage]
-        };
+  
+    // Update the selected chat with the new message
+    setSelectedChat(prevChat => {
+      if (prevChat) {
+        const updatedMessages = [...prevChat.messages, newMsg];
+        // Update the studentChats state as well
+        setStudentChats(prevChats =>
+          prevChats.map(chat =>
+            chat.id === prevChat.id ? { ...chat, messages: updatedMessages } : chat
+          )
+        );
+        return { ...prevChat, messages: updatedMessages };
       }
-      return chat;
+      return prevChat;
     });
-
-    setStudentChats(updatedChats);
-    localStorage.setItem("lms-student-chats", JSON.stringify(updatedChats));
-    setMessage("");
+  
+    setNewMessage("");
+  
+    // Simulate AI response after a short delay
+    setTimeout(() => {
+      handleAiResponse(newMessage);
+    }, 500);
   };
 
-  const currentChat = getCurrentChat();
+  const handleAiResponse = async (userMessage: string) => {
+    // Basic AI response logic (can be replaced with actual API call)
+    const aiResponse = `KI Antwort: Ich habe deine Nachricht erhalten: "${userMessage}".`;
+  
+    const responseMessage: ChatMessage = {
+      id: uuidv4(),
+      sender: "ai",
+      content: aiResponse,
+      timestamp: new Date().toISOString(), // Convert Date to ISO string
+    };
+  
+    setSelectedChat(prevChat => {
+      if (prevChat) {
+        const updatedMessages = [...prevChat.messages, responseMessage];
+        // Update the studentChats state as well
+        setStudentChats(prevChats =>
+          prevChats.map(chat =>
+            chat.id === prevChat.id ? { ...chat, messages: updatedMessages } : chat
+          )
+        );
+        return { ...prevChat, messages: updatedMessages };
+      }
+      return prevChat;
+    });
+  };
+
+  const handleChatSelect = (chat: StudentChat) => {
+    setSelectedChat(chat);
+  };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Studentenchats</h1>
-        <p className="text-muted-foreground">Sieh dir die Chat-Verläufe der Studenten an und antworte</p>
+    <div className="flex h-full">
+      {/* Chat List */}
+      <div className="w-1/4 border-r p-4">
+        <h2 className="text-lg font-semibold mb-4">Studenten Chats</h2>
+        <ScrollArea className="rounded-md border h-[calc(100vh-150px)]">
+          <div className="space-y-2">
+            {studentChats.map((chat) => (
+              <Card
+                key={chat.id}
+                className={`cursor-pointer ${selectedChat?.id === chat.id ? "bg-secondary" : ""}`}
+                onClick={() => handleChatSelect(chat)}
+              >
+                <CardContent className="flex items-center space-x-4 p-3">
+                  <Avatar>
+                    <AvatarImage src={`https://avatar.vercel.sh/${chat.student_name}.png`} />
+                    <AvatarFallback>{chat.student_name.substring(0, 2)}</AvatarFallback>
+                  </Avatar>
+                  <span>{chat.student_name}</span>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </ScrollArea>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        {/* Student List */}
-        <Card className="md:col-span-3">
-          <CardHeader>
-            <CardTitle>Studenten</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <ScrollArea className="h-[calc(100vh-320px)]">
-              <div className="p-4 space-y-2">
-                {studentChats.map(chat => (
-                  <Button
-                    key={chat.id}
-                    variant={selectedChat === chat.id ? "default" : "ghost"}
-                    className="w-full justify-start"
-                    onClick={() => setSelectedChat(chat.id)}
-                  >
-                    <User className="mr-2 h-4 w-4" />
-                    {chat.student_name}
-                  </Button>
-                ))}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-
-        {/* Chat Area */}
-        <Card className="md:col-span-9">
-          {currentChat ? (
-            <>
-              <CardHeader>
-                <CardTitle>Chat mit {currentChat.student_name}</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="flex flex-col h-[calc(100vh-320px)]">
-                  <ScrollArea className="flex-grow p-4">
-                    <div className="space-y-4">
-                      {currentChat.messages.map(msg => (
-                        <div
-                          key={msg.id}
-                          className={`flex ${
-                            msg.sender === "student" ? "justify-start" : "justify-end"
+      {/* Chat Window */}
+      {selectedChat ? (
+        <div className="w-3/4 p-4 flex flex-col">
+          <Card className="h-full flex flex-col">
+            <CardHeader>
+              <CardTitle>{selectedChat.student_name}</CardTitle>
+            </CardHeader>
+            <CardContent className="relative h-[calc(100vh-250px)]">
+              <ScrollArea className="rounded-md h-[calc(100vh-250px)]">
+                <div className="space-y-4 p-4">
+                  {selectedChat.messages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex flex-col ${msg.sender === "student" ? "items-end" : "items-start"
+                        }`}
+                    >
+                      <div
+                        className={`rounded-lg p-2 max-w-sm ${msg.sender === "student" ? "bg-primary text-primary-foreground" : "bg-secondary"
                           }`}
-                        >
-                          <div
-                            className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                              msg.sender === "student"
-                                ? "bg-secondary text-secondary-foreground"
-                                : "bg-primary text-primary-foreground"
-                            }`}
-                          >
-                            <div className="mb-1">{msg.content}</div>
-                            <div className="text-xs opacity-70">{formatTimestamp(msg.timestamp)}</div>
-                          </div>
-                        </div>
-                      ))}
+                      >
+                        {msg.content}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(msg.timestamp), "dd.MM.yyyy HH:mm")}
+                      </span>
                     </div>
-                  </ScrollArea>
-                  <div className="p-4 border-t">
-                    <div className="flex space-x-2">
-                      <Input
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        placeholder="Schreibe eine Antwort..."
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleSendMessage();
-                        }}
-                      />
-                      <Button onClick={handleSendMessage}>Senden</Button>
-                    </div>
-                  </div>
+                  ))}
+                  <div ref={chatBottomRef} /> {/* Scroll anchor */}
                 </div>
-              </CardContent>
-            </>
-          ) : (
-            <CardContent>
-              <p className="text-center py-12 text-muted-foreground">
-                Wähle einen Studenten aus, um den Chat anzuzeigen
-              </p>
+              </ScrollArea>
             </CardContent>
-          )}
-        </Card>
-      </div>
+            <CardFooter>
+              <div className="flex w-full items-center space-x-2">
+                <Input
+                  type="text"
+                  placeholder="Nachricht eingeben..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSendMessage();
+                    }
+                  }}
+                />
+                <Button onClick={handleSendMessage}>Senden</Button>
+              </div>
+            </CardFooter>
+          </Card>
+        </div>
+      ) : (
+        <div className="w-3/4 flex items-center justify-center">
+          <p className="text-muted-foreground">Wähle einen Chat aus, um die Konversation anzuzeigen.</p>
+        </div>
+      )}
     </div>
   );
 };
