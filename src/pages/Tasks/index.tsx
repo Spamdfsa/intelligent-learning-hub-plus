@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import ReactMarkdown from 'react-markdown';
 import { QuizQuestion, Task } from "@/types";
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf'; // Fixed import to use named import
 import html2canvas from 'html2canvas';
 
 const TasksPage = () => {
