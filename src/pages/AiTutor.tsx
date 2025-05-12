@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,6 +10,8 @@ import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 interface GeneratedContent {
   id: string;
@@ -691,6 +692,17 @@ Die Zusammenfassung soll gut strukturiert und leicht verständlich sein, mit kla
     setShowUserDataDialog(!showUserDataDialog);
   };
 
+  // Available courses for selection
+  const availableCourses = [
+    "Einführung in die Informatik",
+    "Programmierung mit Python",
+    "Datenstrukturen und Algorithmen",
+    "Webtechnologien",
+    "Künstliche Intelligenz",
+    "Datenbanksysteme",
+    "Machine Learning"
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -864,83 +876,92 @@ Die Zusammenfassung soll gut strukturiert und leicht verständlich sein, mit kla
               <CardTitle>Quiz generieren</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="course" className="block text-sm font-medium">
-                  Kurs
-                </label>
-                <Input 
-                  id="course"
-                  value={courseSelection} 
-                  onChange={(e) => setCourseSelection(e.target.value)}
-                  placeholder="Kursname eingeben" 
-                />
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="course-selection">Kurs auswählen</Label>
+                  <Select
+                    value={courseSelection}
+                    onValueChange={setCourseSelection}
+                  >
+                    <SelectTrigger id="course-selection" className="w-full">
+                      <SelectValue placeholder="Kurs auswählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableCourses.map((course) => (
+                        <SelectItem key={course} value={course}>
+                          {course}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="question-count">Anzahl der Fragen</Label>
+                  <Select
+                    value={questionCount}
+                    onValueChange={setQuestionCount}
+                  >
+                    <SelectTrigger id="question-count">
+                      <SelectValue placeholder="Anzahl der Fragen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3">3 Fragen</SelectItem>
+                      <SelectItem value="5">5 Fragen</SelectItem>
+                      <SelectItem value="10">10 Fragen</SelectItem>
+                      <SelectItem value="15">15 Fragen</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="difficulty">Schwierigkeitsgrad</Label>
+                  <Select
+                    value={difficulty}
+                    onValueChange={setDifficulty}
+                  >
+                    <SelectTrigger id="difficulty">
+                      <SelectValue placeholder="Schwierigkeitsgrad" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Leicht">Leicht</SelectItem>
+                      <SelectItem value="Mittel">Mittel</SelectItem>
+                      <SelectItem value="Schwer">Schwer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="questionCount" className="block text-sm font-medium">
-                  Anzahl der Fragen
-                </label>
-                <select 
-                  id="questionCount"
-                  value={questionCount} 
-                  onChange={(e) => setQuestionCount(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 h-10"
-                >
-                  <option value="3">3</option>
-                  <option value="5">5</option>
-                  <option value="10">10</option>
-                  <option value="15">15</option>
-                </select>
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="difficulty" className="block text-sm font-medium">
-                  Schwierigkeitsgrad
-                </label>
-                <select 
-                  id="difficulty"
-                  value={difficulty} 
-                  onChange={(e) => setDifficulty(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 h-10"
-                >
-                  <option value="Einfach">Einfach</option>
-                  <option value="Mittel">Mittel</option>
-                  <option value="Schwer">Schwer</option>
-                </select>
-              </div>
-              
-              <Button 
-                className="w-full" 
-                onClick={handleGenerateQuiz} 
-                disabled={isLoading || !courseSelection.trim()}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generiere Quiz...
-                  </>
-                ) : (
-                  <>
-                    <Bot className="mr-2 h-4 w-4" />
-                    Quiz generieren
-                  </>
-                )}
-              </Button>
-              
-              {generatedContent && generatedContent.type === "quiz" && (
-                <div className="mt-4 p-4 border rounded-md bg-muted/50">
-                  <h3 className="font-medium text-lg flex items-center gap-2 mb-2">
-                    <Check className="h-5 w-5 text-green-500" />
-                    Quiz erfolgreich generiert
-                  </h3>
-                  <p className="mb-4 text-sm">
-                    Ein neues Quiz wurde erstellt und zu deinen Aufgaben hinzugefügt.
-                  </p>
-                  <Button onClick={handleNavigateToTasks} className="w-full" variant="outline">
-                    <ArrowRight className="mr-2 h-4 w-4" />
-                    Zu den Aufgaben gehen
+
+              {generatedContent && generatedContent.type === "quiz" ? (
+                <div className="space-y-4">
+                  <div className="rounded-md bg-green-50 p-4 dark:bg-green-900">
+                    <div className="flex items-center">
+                      <Check className="h-5 w-5 text-green-500" />
+                      <span className="ml-2 text-green-700 dark:text-green-300">
+                        Quiz wurde generiert und zu deinen Aufgaben hinzugefügt
+                      </span>
+                    </div>
+                  </div>
+                  <Button onClick={handleNavigateToTasks} className="w-full">
+                    Zu meinen Aufgaben gehen
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
+              ) : (
+                <Button
+                  onClick={handleGenerateQuiz}
+                  disabled={isLoading}
+                  className="w-full"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Quiz wird generiert...
+                    </>
+                  ) : (
+                    "Quiz generieren"
+                  )}
+                </Button>
               )}
             </CardContent>
           </Card>
@@ -952,79 +973,92 @@ Die Zusammenfassung soll gut strukturiert und leicht verständlich sein, mit kla
               <CardTitle>Zusammenfassung generieren</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="courseSummary" className="block text-sm font-medium">
-                  Kurs
-                </label>
-                <Input 
-                  id="courseSummary"
-                  value={courseSelection} 
-                  onChange={(e) => setCourseSelection(e.target.value)}
-                  placeholder="Kursname eingeben" 
-                />
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="summary-course">Kurs auswählen</Label>
+                  <Select
+                    value={courseSelection}
+                    onValueChange={setCourseSelection}
+                  >
+                    <SelectTrigger id="summary-course">
+                      <SelectValue placeholder="Kurs auswählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableCourses.map((course) => (
+                        <SelectItem key={course} value={course}>
+                          {course}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="module-selection">Modul</Label>
+                  <Select
+                    value={moduleSelection}
+                    onValueChange={setModuleSelection}
+                  >
+                    <SelectTrigger id="module-selection">
+                      <SelectValue placeholder="Modul auswählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Alle Module">Alle Module</SelectItem>
+                      <SelectItem value="Modul 1">Modul 1</SelectItem>
+                      <SelectItem value="Modul 2">Modul 2</SelectItem>
+                      <SelectItem value="Modul 3">Modul 3</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="summary-style">Art der Zusammenfassung</Label>
+                  <Select
+                    value={summaryStyle}
+                    onValueChange={setSummaryStyle}
+                  >
+                    <SelectTrigger id="summary-style">
+                      <SelectValue placeholder="Art der Zusammenfassung" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Kurz und prägnant">Kurz und prägnant</SelectItem>
+                      <SelectItem value="Ausführlich mit Beispielen">Ausführlich mit Beispielen</SelectItem>
+                      <SelectItem value="Fokus auf Definitionen">Fokus auf Definitionen</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="module" className="block text-sm font-medium">
-                  Modul (optional)
-                </label>
-                <Input 
-                  id="module"
-                  value={moduleSelection} 
-                  onChange={(e) => setModuleSelection(e.target.value)}
-                  placeholder="Modulname oder 'Alle Module'" 
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="style" className="block text-sm font-medium">
-                  Stil der Zusammenfassung
-                </label>
-                <select 
-                  id="style"
-                  value={summaryStyle} 
-                  onChange={(e) => setSummaryStyle(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 h-10"
-                >
-                  <option value="Kurz und prägnant">Kurz und prägnant</option>
-                  <option value="Detailliert mit Beispielen">Detailliert mit Beispielen</option>
-                  <option value="Akademischer Stil">Akademischer Stil</option>
-                  <option value="Einfache Sprache">Einfache Sprache</option>
-                </select>
-              </div>
-              
-              <Button 
-                className="w-full" 
-                onClick={handleGenerateSummary}
-                disabled={isLoading || !courseSelection.trim()}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generiere Zusammenfassung...
-                  </>
-                ) : (
-                  <>
-                    <Bot className="mr-2 h-4 w-4" />
-                    Zusammenfassung erstellen
-                  </>
-                )}
-              </Button>
-              
-              {generatedContent && generatedContent.type === "summary" && (
-                <div className="mt-4 p-4 border rounded-md bg-muted/50">
-                  <h3 className="font-medium text-lg flex items-center gap-2 mb-2">
-                    <Check className="h-5 w-5 text-green-500" />
-                    Zusammenfassung erfolgreich generiert
-                  </h3>
-                  <p className="mb-4 text-sm">
-                    Eine neue Zusammenfassung wurde erstellt und zu deiner Sammlung hinzugefügt.
-                  </p>
-                  <Button onClick={handleNavigateToSummaries} className="w-full" variant="outline">
-                    <ArrowRight className="mr-2 h-4 w-4" />
-                    Zu den Zusammenfassungen gehen
+
+              {generatedContent && generatedContent.type === "summary" ? (
+                <div className="space-y-4">
+                  <div className="rounded-md bg-green-50 p-4 dark:bg-green-900">
+                    <div className="flex items-center">
+                      <Check className="h-5 w-5 text-green-500" />
+                      <span className="ml-2 text-green-700 dark:text-green-300">
+                        Zusammenfassung wurde generiert und gespeichert
+                      </span>
+                    </div>
+                  </div>
+                  <Button onClick={handleNavigateToSummaries} className="w-full">
+                    Zu meinen Zusammenfassungen gehen
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
+              ) : (
+                <Button
+                  onClick={handleGenerateSummary}
+                  disabled={isLoading}
+                  className="w-full"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Zusammenfassung wird generiert...
+                    </>
+                  ) : (
+                    "Zusammenfassung generieren"
+                  )}
+                </Button>
               )}
             </CardContent>
           </Card>
