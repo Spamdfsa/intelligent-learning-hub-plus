@@ -51,9 +51,11 @@ export interface Material {
 export interface QuizQuestion {
   id: string;
   question: string;
-  options: string[];
-  correctOption: number;
-  userAnswer?: number;
+  options?: string[];
+  correctOption?: number;
+  answerType: "multiple-choice" | "text" | "true-false";
+  correctAnswer?: string;
+  userAnswer?: number | string;
   explanation?: string;
 }
 

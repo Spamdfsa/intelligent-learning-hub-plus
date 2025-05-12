@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChatMessage } from "@/types";
+import { ChatMessage, QuizQuestion } from "@/types";
 import { Send, Bot, Loader2, Check, ArrowRight, Key, Database } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,12 +14,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 interface GeneratedContent {
   id: string;
   title: string;
-  content: string;
-  timestamp: Date;
   type: "quiz" | "summary";
 }
 
 const AiTutor = () => {
+  // ... keep existing code (message state, input state, loading state, etc.)
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
@@ -46,7 +45,7 @@ const AiTutor = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Load all user data for the AI to use
+  // ... keep existing code (user data loading)
   useEffect(() => {
     const loadUserData = () => {
       try {
@@ -89,6 +88,7 @@ const AiTutor = () => {
     }
   }, []);
 
+  // ... keep existing code (API key handling, send message function)
   const handleSaveApiKey = () => {
     if (apiKey.trim()) {
       localStorage.setItem("openai-api-key", apiKey.trim());
@@ -239,24 +239,39 @@ Nutze diese Informationen, um personalisierte Hilfe zu geben. Wenn Informationen
         throw new Error("API-Schlüssel fehlt");
       }
 
-      // Call OpenAI API to generate quiz with instructed structure
-      const prompt = `Erstelle ein Quiz zum Thema "${courseSelection}" mit ${questionCount} Fragen im Schwierigkeitsgrad "${difficulty}". 
+      // Call OpenAI API to generate quiz with improved structure
+      const prompt = `Erstelle ein interaktives Quiz zum Thema "${courseSelection}" mit ${questionCount} Fragen im Schwierigkeitsgrad "${difficulty}".
+      
+Erstelle einen Mix aus:
+1. Multiple-Choice-Fragen (mit 3-4 Optionen)
+2. Freitext-Fragen (mit erwarteter Antwort)
+3. Wahr/Falsch-Fragen
       
 Formatiere das Quiz als JSON-Array mit folgender Struktur:
 [
   {
     "question": "Frage 1?", 
+    "answerType": "multiple-choice",
     "options": ["Option A", "Option B", "Option C", "Option D"], 
     "correctOption": 0
   },
   {
-    "question": "Frage 2?", 
-    "options": ["Option A", "Option B", "Option C", "Option D"], 
-    "correctOption": 2
+    "question": "Frage 2 (Freitext)?",
+    "answerType": "text",
+    "correctAnswer": "Erwartete Antwort"
+  },
+  {
+    "question": "Frage 3 (Wahr/Falsch): Aussage X ist korrekt.",
+    "answerType": "true-false",
+    "correctAnswer": "true"
   }
 ]
 
-Die "correctOption" ist der Index (beginnend mit 0) der korrekten Antwort im options-Array.`;
+Bei Multiple-Choice ist "correctOption" der Index (beginnend mit 0) der korrekten Antwort im options-Array.
+Bei Freitext-Fragen ist "correctAnswer" die erwartete Antwort (kurz und prägnant).
+Bei Wahr/Falsch ist "correctAnswer" entweder "true" oder "false".
+
+Formuliere die Fragen themenspezifisch, herausfordernd und so, dass sie wirklich das Verständnis prüfen.`;
       
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -269,7 +284,7 @@ Die "correctOption" ist der Index (beginnend mit 0) der korrekten Antwort im opt
           messages: [
             {
               role: "system",
-              content: "Du bist ein Bildungsexperte, der hochwertige Lernmaterialien erstellt. Erstelle ein Quiz im angegebenen Format. Achte darauf, dass die JSON-Struktur korrekt ist."
+              content: "Du bist ein Bildungsexperte, der hochwertige Lernmaterialien erstellt. Erstelle ein Quiz im angegebenen Format. Achte darauf, dass die JSON-Struktur korrekt ist und dass die Fragen eine Mischung aus verschiedenen Fragetypen enthalten."
             },
             {
               role: "user",
@@ -277,7 +292,7 @@ Die "correctOption" ist der Index (beginnend mit 0) der korrekten Antwort im opt
             }
           ],
           temperature: 0.7,
-          max_tokens: 1000
+          max_tokens: 1500
         })
       });
 
@@ -290,7 +305,7 @@ Die "correctOption" ist der Index (beginnend mit 0) der korrekten Antwort im opt
       const quizContent = result.choices[0]?.message?.content || "Es konnten keine Quiz-Fragen generiert werden.";
       
       let parsedQuiz;
-      let questions = [];
+      let questions: QuizQuestion[] = [];
       let formattedDescription = '';
 
       try {
@@ -300,21 +315,26 @@ Die "correctOption" ist der Index (beginnend mit 0) der korrekten Antwort im opt
           parsedQuiz = JSON.parse(jsonMatch[0]);
           
           // Format questions for display in the task description
-          formattedDescription = `# Quiz: ${courseSelection}\n\n`;
-          parsedQuiz.forEach((q, idx) => {
+          formattedDescription = `# Quiz: ${courseSelection}\n\n**Schwierigkeitsgrad:** ${difficulty}\n\n`;
+          parsedQuiz.forEach((q: any, idx: number) => {
             formattedDescription += `### Frage ${idx + 1}:\n${q.question}\n\n`;
-            q.options.forEach((opt, optIdx) => {
-              formattedDescription += `- ${opt}\n`;
-            });
-            formattedDescription += '\n';
+            
+            if (q.answerType === 'multiple-choice' && q.options) {
+              q.options.forEach((opt: string, optIdx: number) => {
+                formattedDescription += `- ${opt}\n`;
+              });
+              formattedDescription += '\n';
+            }
           });
           
           // Create questions array for the task
-          questions = parsedQuiz.map((q, idx) => ({
+          questions = parsedQuiz.map((q: any, idx: number) => ({
             id: `q-${Date.now()}-${idx}`,
             question: q.question,
+            answerType: q.answerType,
             options: q.options,
-            correctOption: q.correctOption
+            correctOption: q.correctOption,
+            correctAnswer: q.correctAnswer
           }));
         } else {
           // Fallback if JSON parsing fails
@@ -326,14 +346,15 @@ Die "correctOption" ist der Index (beginnend mit 0) der korrekten Antwort im opt
       }
       
       const quizId = uuidv4();
+      
+      // Set minimal generated content state - just show success message, not the quiz content
       setGeneratedContent({
         id: quizId,
         title: `Quiz: ${courseSelection}`,
-        content: formattedDescription,
-        timestamp: new Date(),
         type: "quiz"
       });
 
+      // Save to tasks
       saveToTasks({
         id: quizId,
         title: `Quiz: ${courseSelection}`,
@@ -360,21 +381,19 @@ Die "correctOption" ist der Index (beginnend mit 0) der korrekten Antwort im opt
       });
       
       // Fallback to mock quiz if API fails
+      const quizId = uuidv4();
       const mockQuiz = generateMockQuiz(courseSelection, parseInt(questionCount), difficulty);
-      const mockQuizContent = mockQuiz.formattedDescription;
+      
       setGeneratedContent({
-        id: uuidv4(),
+        id: quizId,
         title: `Quiz: ${courseSelection}`,
-        content: mockQuizContent,
-        timestamp: new Date(),
         type: "quiz"
       });
       
-      const mockQuizId = uuidv4();
       saveToTasks({
-        id: mockQuizId,
+        id: quizId,
         title: `Quiz: ${courseSelection}`,
-        description: mockQuizContent,
+        description: mockQuiz.formattedDescription,
         course: courseSelection,
         dueDate: getRandomDueDate(),
         status: "pending",
@@ -397,8 +416,18 @@ Die "correctOption" ist der Index (beginnend mit 0) der korrekten Antwort im opt
         throw new Error("API-Schlüssel fehlt");
       }
 
-      // Call OpenAI API to generate summary
-      const prompt = `Erstelle eine ${summaryStyle} Zusammenfassung zum Thema "${courseSelection}" ${moduleSelection !== "Alle Module" ? `für das ${moduleSelection}` : ""}.`;
+      // Call OpenAI API to generate summary with improved markdown formatting
+      const prompt = `Erstelle eine ${summaryStyle} Zusammenfassung zum Thema "${courseSelection}" ${moduleSelection !== "Alle Module" ? `für das ${moduleSelection}` : ""}.
+      
+Bitte verwende Markdown-Formatierung für bessere Lesbarkeit:
+- Verwende # für Hauptüberschriften
+- Verwende ## für Unterüberschriften
+- Verwende Listen mit - oder 1. für nummerierte Listen
+- Verwende **Text** für Fettschrift bei wichtigen Begriffen
+- Füge Beispiele und Erläuterungen ein, wo sinnvoll
+- Strukturiere die Zusammenfassung logisch mit Abschnitten
+
+Die Zusammenfassung soll gut strukturiert und leicht verständlich sein, mit klaren Abschnitten und hervorgehobenen Schlüsselkonzepten.`;
       
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -411,7 +440,7 @@ Die "correctOption" ist der Index (beginnend mit 0) der korrekten Antwort im opt
           messages: [
             {
               role: "system",
-              content: "Du bist ein Bildungsexperte, der präzise und verständliche Zusammenfassungen erstellt. Formatiere die Ausgabe mit Markdown für bessere Lesbarkeit."
+              content: "Du bist ein Bildungsexperte, der präzise und verständliche Zusammenfassungen erstellt. Formatiere die Ausgabe mit Markdown für bessere Lesbarkeit und strukturiere die Inhalte sinnvoll."
             },
             {
               role: "user",
@@ -449,9 +478,7 @@ Die "correctOption" ist der Index (beginnend mit 0) der korrekten Antwort im opt
       
       setGeneratedContent({
         id: summaryId,
-        title: `Zusammenfassung: ${courseSelection} - ${moduleSelection}`,
-        content: summaryContent,
-        timestamp: new Date(),
+        title: `Zusammenfassung: ${courseSelection}`,
         type: "summary"
       });
       
@@ -468,19 +495,33 @@ Die "correctOption" ist der Index (beginnend mit 0) der korrekten Antwort im opt
       });
       
       // Fallback to mock summary if API fails
+      const summaryId = uuidv4();
       const mockSummaryContent = generateMockSummary(courseSelection, moduleSelection, summaryStyle);
+      
       setGeneratedContent({
-        id: uuidv4(),
-        title: `Zusammenfassung: ${courseSelection} - ${moduleSelection}`,
-        content: mockSummaryContent,
-        timestamp: new Date(),
+        id: summaryId,
+        title: `Zusammenfassung: ${courseSelection}`,
         type: "summary"
       });
+      
+      // Save mock summary
+      const storedSummaries = localStorage.getItem("lms-summaries");
+      const summaries = storedSummaries ? JSON.parse(storedSummaries) : [];
+      summaries.push({
+        id: summaryId,
+        title: `Zusammenfassung: ${courseSelection} - ${moduleSelection}`,
+        content: mockSummaryContent,
+        course: courseSelection,
+        module: moduleSelection,
+        createdAt: new Date()
+      });
+      localStorage.setItem("lms-summaries", JSON.stringify(summaries));
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ... keep existing code (utility functions)
   const saveToTasks = (newTask: any) => {
     // Lade vorhandene Aufgaben aus dem localStorage
     const storedTasks = localStorage.getItem("lms-tasks");
@@ -506,6 +547,7 @@ Die "correctOption" ist der Index (beginnend mit 0) der korrekten Antwort im opt
     const quizQuestions = [
       { 
         question: "Was sind die Hauptkomponenten eines Von-Neumann-Rechners?", 
+        answerType: "multiple-choice",
         options: [
           "Prozessor, Speicher, Ein-/Ausgabegeräte und Bus-System",
           "Motherboard, CPU und Grafikkarte",
@@ -515,7 +557,18 @@ Die "correctOption" ist der Index (beginnend mit 0) der korrekten Antwort im opt
         correctOption: 0 
       },
       { 
+        question: "Erläutere kurz, was ein Betriebssystem ist und welche Hauptfunktion es erfüllt.", 
+        answerType: "text",
+        correctAnswer: "Ein Betriebssystem ist die Software, die die Hardware eines Computers verwaltet und grundlegende Dienste für Anwendungsprogramme bereitstellt."
+      },
+      { 
+        question: "Aussage: Der Cache-Speicher ist langsamer als der Hauptspeicher (RAM).", 
+        answerType: "true-false",
+        correctAnswer: "false"
+      },
+      { 
         question: "Wie funktioniert das HTTP-Protokoll?", 
+        answerType: "multiple-choice",
         options: [
           "Es ist ein Protokoll zur Verschlüsselung von Daten",
           "Es ist ein zustandsloses Protokoll für Client-Server-Kommunikation im Web",
@@ -525,7 +578,18 @@ Die "correctOption" ist der Index (beginnend mit 0) der korrekten Antwort im opt
         correctOption: 1 
       },
       { 
+        question: "Erkläre in einem Satz, was ein Algorithmus ist.", 
+        answerType: "text",
+        correctAnswer: "Ein Algorithmus ist eine eindeutige, schrittweise Anleitung zur Lösung eines Problems oder einer Aufgabe."
+      },
+      { 
+        question: "Aussage: Python ist eine kompilierte Programmiersprache.", 
+        answerType: "true-false",
+        correctAnswer: "false"
+      },
+      { 
         question: "Was ist der Unterschied zwischen Stack und Heap?", 
+        answerType: "multiple-choice",
         options: [
           "Stack ist für lokale Variablen, Heap für dynamisch allozierte Objekte",
           "Stack ist für Klassendefinitionen, Heap für Instanzvariablen",
@@ -535,17 +599,18 @@ Die "correctOption" ist der Index (beginnend mit 0) der korrekten Antwort im opt
         correctOption: 0 
       },
       { 
-        question: "Erkläre die Funktionsweise von Hashtabellen.", 
-        options: [
-          "Eine hierarchische Datenstruktur zur Organisation von Daten",
-          "Eine Methode zur Kompression von Daten",
-          "Ein Algorithmus zur Sortierung von Listen",
-          "Eine Datenstruktur, die Schlüssel-Wert-Paare mittels Hashfunktion speichert"
-        ],
-        correctOption: 3 
+        question: "Definiere den Begriff 'Polymorphismus' in der objektorientierten Programmierung.", 
+        answerType: "text",
+        correctAnswer: "Polymorphismus beschreibt die Fähigkeit eines Objekts, in verschiedenen Formen aufzutreten und unterschiedliches Verhalten zu zeigen, abhängig vom Kontext, in dem es verwendet wird."
+      },
+      { 
+        question: "Aussage: SQL ist eine prozedurale Programmiersprache.", 
+        answerType: "true-false",
+        correctAnswer: "false"
       },
       { 
         question: "Was sind die ACID-Eigenschaften in Datenbanktransaktionen?", 
+        answerType: "multiple-choice",
         options: [
           "Asynchronität, Klarheit, Integration und Datensicherheit",
           "Atomarität, Konsistenz, Isolation und Dauerhaftigkeit",
@@ -553,56 +618,6 @@ Die "correctOption" ist der Index (beginnend mit 0) der korrekten Antwort im opt
           "Adaptivität, Komplexität, Innovation und Design"
         ],
         correctOption: 1 
-      },
-      { 
-        question: "Wie funktioniert der Quick-Sort-Algorithmus?", 
-        options: [
-          "Er teilt Listen in kleinere Teillisten anhand eines Pivot-Elements",
-          "Er vergleicht benachbarte Elemente und tauscht sie bei Bedarf",
-          "Er nutzt ein Heap-Datenstruktur zum Sortieren",
-          "Er sortiert, indem er Elemente an die richtige Position einfügt"
-        ],
-        correctOption: 0 
-      },
-      { 
-        question: "Was ist Polymorphismus in der objektorientierten Programmierung?", 
-        options: [
-          "Die Fähigkeit, private Variablen zu schützen",
-          "Die Fähigkeit eines Objekts, in verschiedenen Formen aufzutreten",
-          "Die Möglichkeit, mehrere Konstruktoren zu definieren",
-          "Die Möglichkeit, Funktionen zu überladen"
-        ],
-        correctOption: 1 
-      },
-      { 
-        question: "Erkläre den Unterschied zwischen TCP und UDP.", 
-        options: [
-          "TCP ist sicherheitsorientiert, UDP ist geschwindigkeitsorientiert",
-          "TCP ist verbindungsorientiert und zuverlässig, UDP ist verbindungslos und schneller",
-          "TCP wird für E-Mails verwendet, UDP für Webseiten",
-          "TCP arbeitet auf Schicht 4, UDP auf Schicht 3 des OSI-Modells"
-        ],
-        correctOption: 1 
-      },
-      { 
-        question: "Was ist ein Deadlock und wie kann er vermieden werden?", 
-        options: [
-          "Ein Virus, der durch Antivirenprogramme bekämpft wird",
-          "Ein Verklemmungszustand von Prozessen, vermeidbar durch Ressourcenzuordnungsstrategien",
-          "Ein Fehler im Quellcode, der durch Debugging gelöst wird",
-          "Ein überlasteter Server, der durch Load-Balancing entlastet wird"
-        ],
-        correctOption: 1 
-      },
-      { 
-        question: "Wie funktioniert das OAuth 2.0-Protokoll?", 
-        options: [
-          "Es ist ein Verschlüsselungsprotokoll für sichere Kommunikation",
-          "Es ist ein Protokoll zur Hardwareauthentifizierung",
-          "Es ist ein Autorisierungsframework für sicheren, eingeschränkten Zugriff auf Ressourcen",
-          "Es ist ein Protokoll für die Verwaltung von Netzwerkgeräten"
-        ],
-        correctOption: 2 
       }
     ];
     
@@ -621,22 +636,27 @@ Die "correctOption" ist der Index (beginnend mit 0) der korrekten Antwort im opt
     }
     
     // Format questions for display in the quiz task
-    let formattedDescription = `# Quiz: ${course}\n\nSchwierigkeitsgrad: ${difficulty}\n\n`;
+    let formattedDescription = `# Quiz: ${course}\n\n**Schwierigkeitsgrad:** ${difficulty}\n\n`;
     
     selectedQuestions.forEach((q, idx) => {
       formattedDescription += `### Frage ${idx + 1}:\n${q.question}\n\n`;
-      q.options.forEach((opt, optIdx) => {
-        formattedDescription += `- ${opt}\n`;
-      });
-      formattedDescription += '\n';
+      
+      if (q.answerType === 'multiple-choice' && q.options) {
+        q.options.forEach((opt: string) => {
+          formattedDescription += `- ${opt}\n`;
+        });
+        formattedDescription += '\n';
+      }
     });
     
     // Create the questions array for the task
     const questions = selectedQuestions.map((q, idx) => ({
       id: `q-${Date.now()}-${idx}`,
       question: q.question,
+      answerType: q.answerType,
       options: q.options,
-      correctOption: q.correctOption
+      correctOption: q.correctOption,
+      correctAnswer: q.correctAnswer
     }));
     
     return {
@@ -646,6 +666,7 @@ Die "correctOption" ist der Index (beginnend mit 0) der korrekten Antwort im opt
   };
   
   const generateMockSummary = (course: string, module: string, style: string): string => {
+    // ... keep existing code (mock summary generation)
     const summaries = [
       `# Grundlagen der Informatik\n\nDie Informatik befasst sich mit der automatischen Verarbeitung von Informationen. Sie umfasst sowohl theoretische als auch praktische Aspekte der Datenverarbeitung. Zentrale Konzepte sind Algorithmen (Verfahren zur Lösung von Problemen), Datenstrukturen (Organisationsformen für Daten) und Programmiersprachen (formale Sprachen zur Formulierung von Algorithmen).\n\nWichtige Teilgebiete:\n- Theoretische Informatik: Automatentheorie, Berechenbarkeitstheorie, Komplexitätstheorie\n- Praktische Informatik: Programmierung, Softwareentwicklung, Datenbanken\n- Technische Informatik: Rechnerarchitektur, Betriebssysteme, Netzwerke\n\nDie Bedeutung der Informatik erstreckt sich heute auf nahezu alle Lebensbereiche, von der Kommunikation über die Medizin bis hin zur Wirtschaft.`,
       
@@ -782,251 +803,4 @@ Die "correctOption" ist der Index (beginnend mit 0) der korrekten Antwort im opt
                     <div
                       key={message.id}
                       className={`flex ${
-                        message.role === "user" ? "justify-end" : "justify-start"
-                      }`}
-                    >
-                      <div
-                        className={`max-w-[80%] rounded-lg p-4 ${
-                          message.role === "user"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
-                        }`}
-                      >
-                        {message.role === "assistant" && (
-                          <div className="mb-2 flex items-center gap-2">
-                            <Bot className="h-5 w-5" />
-                            <span className="font-medium">KI-Tutor</span>
-                          </div>
-                        )}
-                        <p className="text-sm">{message.content}</p>
-                      </div>
-                    </div>
-                  ))}
-                  {isLoading && (
-                    <div className="flex justify-start">
-                      <div className="max-w-[80%] rounded-lg bg-muted p-4">
-                        <div className="flex items-center gap-2">
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                          <span className="text-sm">KI-Tutor schreibt...</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div className="border-t p-4">
-                  <form onSubmit={handleSendMessage} className="flex gap-2">
-                    <Textarea
-                      placeholder="Stelle eine Frage zu deinen Kursinhalten..."
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      className="resize-none"
-                      rows={2}
-                      storeData={true}
-                      dataKey="chat-last-message"
-                    />
-                    <Button
-                      type="submit"
-                      size="icon"
-                      disabled={isLoading || !input.trim()}
-                    >
-                      <Send className="h-5 w-5" />
-                      <span className="sr-only">Senden</span>
-                    </Button>
-                  </form>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="quiz" className="space-y-4 pt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Quiz-Generator</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p>Generiere automatisch Quizfragen basierend auf deinen Kursinhalten, um dein Wissen zu testen.</p>
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Wähle einen Kurs:</p>
-                <select 
-                  className="w-full border rounded p-2 dark:bg-secondary/80 dark:border-secondary dark:text-foreground"
-                  value={courseSelection}
-                  onChange={(e) => setCourseSelection(e.target.value)}
-                  data-key="quiz-course"
-                >
-                  <option>Einführung in die Informatik</option>
-                  <option>Datenbanksysteme</option>
-                  <option>Machine Learning Grundlagen</option>
-                  <option>Web-Entwicklung</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Anzahl der Fragen:</p>
-                <select 
-                  className="w-full border rounded p-2 dark:bg-secondary/80 dark:border-secondary dark:text-foreground"
-                  value={questionCount}
-                  onChange={(e) => setQuestionCount(e.target.value)}
-                  data-key="quiz-count"
-                >
-                  <option>5</option>
-                  <option>10</option>
-                  <option>15</option>
-                  <option>20</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Schwierigkeitsgrad:</p>
-                <select 
-                  className="w-full border rounded p-2 dark:bg-secondary/80 dark:border-secondary dark:text-foreground"
-                  value={difficulty}
-                  onChange={(e) => setDifficulty(e.target.value)}
-                  data-key="quiz-difficulty"
-                >
-                  <option>Leicht</option>
-                  <option>Mittel</option>
-                  <option>Schwer</option>
-                  <option>Gemischt</option>
-                </select>
-              </div>
-              <Button onClick={handleGenerateQuiz} disabled={isLoading} className="w-full">
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Quiz wird generiert...
-                  </>
-                ) : (
-                  "Quiz generieren"
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {generatedContent && generatedContent.type === "quiz" && (
-            <Card className="mt-4 border-green-200 bg-green-50">
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-green-800 flex items-center">
-                      <Check className="mr-2 h-5 w-5 text-green-600" />
-                      Quiz erfolgreich generiert
-                    </CardTitle>
-                    <p className="text-sm text-green-700">Das Quiz wurde zu deinen Aufgaben hinzugefügt.</p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-4 rounded-md border border-green-200 bg-white p-4 max-h-64 overflow-y-auto">
-                  <pre className="text-sm whitespace-pre-wrap font-sans">{generatedContent.content}</pre>
-                </div>
-                <Button 
-                  onClick={handleNavigateToTasks}
-                  variant="outline" 
-                  className="w-full border-green-300 text-green-700 hover:bg-green-100"
-                >
-                  Zu meinen Aufgaben gehen
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        <TabsContent value="summary" className="space-y-4 pt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Inhaltszusammenfassung</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p>Lass dir eine KI-generierte Zusammenfassung deiner Kursunterlagen erstellen.</p>
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Wähle einen Kurs:</p>
-                <select 
-                  className="w-full border rounded p-2 dark:bg-secondary/80 dark:border-secondary dark:text-foreground"
-                  value={courseSelection}
-                  onChange={(e) => setCourseSelection(e.target.value)}
-                  data-key="summary-course"
-                >
-                  <option>Einführung in die Informatik</option>
-                  <option>Datenbanksysteme</option>
-                  <option>Machine Learning Grundlagen</option>
-                  <option>Web-Entwicklung</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Modul auswählen:</p>
-                <select 
-                  className="w-full border rounded p-2 dark:bg-secondary/80 dark:border-secondary dark:text-foreground"
-                  value={moduleSelection}
-                  onChange={(e) => setModuleSelection(e.target.value)}
-                  data-key="summary-module"
-                >
-                  <option>Alle Module</option>
-                  <option>Modul 1: Grundlagen</option>
-                  <option>Modul 2: Fortgeschrittene Konzepte</option>
-                  <option>Modul 3: Praxisprojekte</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Zusammenfassungsstil:</p>
-                <select 
-                  className="w-full border rounded p-2 dark:bg-secondary/80 dark:border-secondary dark:text-foreground"
-                  value={summaryStyle}
-                  onChange={(e) => setSummaryStyle(e.target.value)}
-                  data-key="summary-style"
-                >
-                  <option>Kurz und prägnant</option>
-                  <option>Detailliert</option>
-                  <option>Mit Beispielen</option>
-                  <option>Prüfungsorientiert</option>
-                </select>
-              </div>
-              <Button onClick={handleGenerateSummary} disabled={isLoading} className="w-full">
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Zusammenfassung wird generiert...
-                  </>
-                ) : (
-                  "Zusammenfassung generieren"
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {generatedContent && generatedContent.type === "summary" && (
-            <Card className="mt-4 border-green-200 bg-green-50">
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-green-800 flex items-center">
-                      <Check className="mr-2 h-5 w-5 text-green-600" />
-                      Zusammenfassung erfolgreich erstellt
-                    </CardTitle>
-                    <p className="text-sm text-green-700">Die Zusammenfassung wurde zu deinen Zusammenfassungen hinzugefügt.</p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-4 rounded-md border border-green-200 bg-white p-4 max-h-64 overflow-y-auto">
-                  <div className="prose prose-sm max-w-none">
-                    <pre className="text-sm whitespace-pre-wrap font-sans">{generatedContent.content}</pre>
-                  </div>
-                </div>
-                <Button 
-                  onClick={handleNavigateToSummaries}
-                  variant="outline" 
-                  className="w-full border-green-300 text-green-700 hover:bg-green-100"
-                >
-                  Zu meinen Zusammenfassungen gehen
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-};
-
-export default AiTutor;
+                        message.role === "user" ? "justify-end

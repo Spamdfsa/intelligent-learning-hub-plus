@@ -1,41 +1,17 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Clock, Loader2, X, MessageCircle } from "lucide-react";
+import { Check, Clock, Loader2, X, FileText, FilePdf } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import ReactMarkdown from 'react-markdown';
-
-interface QuizQuestion {
-  id: string;
-  question: string;
-  options: string[];
-  correctOption: number;
-  userAnswer?: number;
-}
-
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  course: string;
-  dueDate?: string;
-  status: "pending" | "submitted" | "graded";
-  type: "quiz" | "summary";
-  answer?: string;
-  feedback?: string;
-  grade?: string;
-  createdAt: Date;
-  submittedAt?: Date;
-  generatedBy: "ai" | "teacher";
-  messages?: {id: string, content: string, role: "user" | "assistant", timestamp: Date}[];
-  questions?: QuizQuestion[];
-}
+import { QuizQuestion, Task } from "@/types";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const TasksPage = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -43,8 +19,8 @@ const TasksPage = () => {
   const [answer, setAnswer] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGrading, setIsGrading] = useState(false);
-  const [chatMessage, setChatMessage] = useState("");
-  const [isSendingChat, setIsSendingChat] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const pdfContentRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
   useEffect(() => {
@@ -69,7 +45,16 @@ const TasksPage = () => {
       // Handle different task types
       if (task.type === 'quiz' && task.questions) {
         // For quiz tasks, all questions must have an answer
-        const allQuestionsAnswered = task.questions.every(q => q.userAnswer !== undefined);
+        const allQuestionsAnswered = task.questions.every(q => {
+          if (q.answerType === 'multiple-choice') {
+            return q.userAnswer !== undefined;
+          } else if (q.answerType === 'text') {
+            return typeof q.userAnswer === 'string' && q.userAnswer.trim() !== '';
+          } else if (q.answerType === 'true-false') {
+            return q.userAnswer !== undefined;
+          }
+          return false;
+        });
         
         if (!allQuestionsAnswered) {
           toast({
@@ -125,12 +110,44 @@ const TasksPage = () => {
     }
   };
   
-  const handleQuestionAnswer = (questionId: string, optionIndex: number) => {
+  const handleMultipleChoiceAnswer = (questionId: string, optionIndex: number) => {
     if (!activeTask || !activeTask.questions) return;
     
     const updatedQuestions = activeTask.questions.map(question => 
       question.id === questionId 
         ? { ...question, userAnswer: optionIndex } 
+        : question
+    );
+    
+    const updatedTask = { ...activeTask, questions: updatedQuestions };
+    const updatedTasks = tasks.map(t => t.id === activeTask.id ? updatedTask : t);
+    
+    saveTasksToStorage(updatedTasks);
+    setActiveTask(updatedTask);
+  };
+  
+  const handleTextAnswer = (questionId: string, textAnswer: string) => {
+    if (!activeTask || !activeTask.questions) return;
+    
+    const updatedQuestions = activeTask.questions.map(question => 
+      question.id === questionId 
+        ? { ...question, userAnswer: textAnswer } 
+        : question
+    );
+    
+    const updatedTask = { ...activeTask, questions: updatedQuestions };
+    const updatedTasks = tasks.map(t => t.id === activeTask.id ? updatedTask : t);
+    
+    saveTasksToStorage(updatedTasks);
+    setActiveTask(updatedTask);
+  };
+  
+  const handleTrueFalseAnswer = (questionId: string, answer: boolean) => {
+    if (!activeTask || !activeTask.questions) return;
+    
+    const updatedQuestions = activeTask.questions.map(question => 
+      question.id === questionId 
+        ? { ...question, userAnswer: answer ? "true" : "false" } 
         : question
     );
     
@@ -163,9 +180,20 @@ const TasksPage = () => {
         if (task.type === 'quiz' && task.questions) {
           totalQuestions = task.questions.length;
           
-          // Zähle korrekte Antworten
+          // Zähle korrekte Antworten basierend auf dem Antworttyp
           task.questions.forEach(question => {
-            if (question.userAnswer === question.correctOption) {
+            if (question.answerType === 'multiple-choice' && question.userAnswer === question.correctOption) {
+              correctAnswers++;
+            } else if (question.answerType === 'text' && question.userAnswer) {
+              // Für Text-Antworten, wenn eine einfache Antwort vorhanden ist, vergleiche strings
+              if (question.correctAnswer && 
+                  typeof question.userAnswer === 'string' && 
+                  question.userAnswer.toLowerCase() === question.correctAnswer.toLowerCase()) {
+                correctAnswers++;
+              }
+              // In einer realen Anwendung würde hier KI für die Bewertung von Freitextantworten verwendet werden
+            } else if (question.answerType === 'true-false' && 
+                      question.userAnswer === question.correctAnswer) {
               correctAnswers++;
             }
           });
@@ -193,15 +221,41 @@ const TasksPage = () => {
           // Füge detailliertes Feedback zu jeder Frage hinzu
           feedback += "\n\n### Detailliertes Feedback:\n\n";
           task.questions.forEach((question, index) => {
-            const isCorrect = question.userAnswer === question.correctOption;
+            let isCorrect = false;
+            
+            if (question.answerType === 'multiple-choice') {
+              isCorrect = question.userAnswer === question.correctOption;
+            } else if (question.answerType === 'text' && question.correctAnswer && question.userAnswer) {
+              isCorrect = typeof question.userAnswer === 'string' && 
+                           question.userAnswer.toLowerCase() === question.correctAnswer.toLowerCase();
+            } else if (question.answerType === 'true-false') {
+              isCorrect = question.userAnswer === question.correctAnswer;
+            }
+            
             feedback += `**Frage ${index + 1}:** ${isCorrect ? '✓ Richtig' : '✗ Falsch'}\n`;
             feedback += `> ${question.question}\n\n`;
-            feedback += `Deine Antwort: ${question.options[question.userAnswer || 0]}\n`;
             
-            if (!isCorrect) {
-              feedback += `Richtige Antwort: ${question.options[question.correctOption]}\n\n`;
-            } else {
-              feedback += '\n';
+            if (question.answerType === 'multiple-choice' && question.options) {
+              feedback += `Deine Antwort: ${typeof question.userAnswer === 'number' ? question.options[question.userAnswer] : 'Keine Antwort'}\n`;
+              if (!isCorrect && question.correctOption !== undefined && question.options) {
+                feedback += `Richtige Antwort: ${question.options[question.correctOption]}\n\n`;
+              } else {
+                feedback += '\n';
+              }
+            } else if (question.answerType === 'text') {
+              feedback += `Deine Antwort: ${question.userAnswer || 'Keine Antwort'}\n`;
+              if (!isCorrect && question.correctAnswer) {
+                feedback += `Richtige Antwort: ${question.correctAnswer}\n\n`;
+              } else {
+                feedback += '\n';
+              }
+            } else if (question.answerType === 'true-false') {
+              feedback += `Deine Antwort: ${question.userAnswer === 'true' ? 'Wahr' : 'Falsch'}\n`;
+              if (!isCorrect && question.correctAnswer) {
+                feedback += `Richtige Antwort: ${question.correctAnswer === 'true' ? 'Wahr' : 'Falsch'}\n\n`;
+              } else {
+                feedback += '\n';
+              }
             }
           });
           
@@ -218,8 +272,7 @@ const TasksPage = () => {
                 ...t, 
                 status: "graded" as const, 
                 feedback, 
-                grade,
-                messages: t.messages || [] 
+                grade
               } 
             : t
         );
@@ -332,78 +385,74 @@ const TasksPage = () => {
     }
   };
 
-  // Chat-Funktion zur Rückfrage
-  const handleSendChatMessage = () => {
-    if (!chatMessage.trim() || !activeTask) return;
+  // Export to PDF functionality
+  const exportToPDF = async () => {
+    if (!activeTask || !pdfContentRef.current) return;
     
-    setIsSendingChat(true);
+    setIsExporting(true);
     
     try {
-      const userMessage = {
-        id: `user-${Date.now()}`,
-        content: chatMessage,
-        role: "user" as const,
-        timestamp: new Date()
-      };
+      // Create a new jsPDF instance
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const content = pdfContentRef.current;
       
-      // Aktualisiere die Task mit der neuen Nachricht
-      const updatedTasks = tasks.map(t => 
-        t.id === activeTask.id 
-          ? { 
-              ...t, 
-              messages: [...(t.messages || []), userMessage] 
-            } 
-          : t
-      );
+      // Add title
+      pdf.setFontSize(18);
+      pdf.text(activeTask.title, 20, 20);
       
-      saveTasksToStorage(updatedTasks);
-      setActiveTask(updatedTasks.find(t => t.id === activeTask.id) || null);
-      setChatMessage("");
+      // Add course name
+      pdf.setFontSize(12);
+      pdf.text(`Kurs: ${activeTask.course}`, 20, 30);
       
-      // Simuliere eine Antwort vom Lehrer/System nach einer kurzen Verzögerung
-      setTimeout(() => {
-        const assistantResponse = {
-          id: `assistant-${Date.now()}`,
-          content: generateAssistantResponse(chatMessage, activeTask),
-          role: "assistant" as const,
-          timestamp: new Date()
-        };
+      // Add date if available
+      if (activeTask.dueDate) {
+        pdf.text(`Fällig: ${activeTask.dueDate}`, 20, 40);
+      }
+      
+      // Convert content to image and add to PDF
+      const canvas = await html2canvas(content);
+      const imgData = canvas.toDataURL('image/png');
+      
+      // Add content image - calculate dimensions to fit on page
+      const imgWidth = 170;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgHeight = canvas.height * imgWidth / canvas.width;
+      
+      // Add content with proper positioning
+      pdf.addImage(imgData, 'PNG', 20, 50, imgWidth, imgHeight);
+      
+      // If content is too large, create multiple pages
+      if (imgHeight > pageHeight - 60) {
+        let heightLeft = imgHeight;
+        let position = 50;
         
-        const updatedTasksWithResponse = tasks.map(t => 
-          t.id === activeTask.id 
-            ? { 
-                ...t, 
-                messages: [...(t.messages || []), assistantResponse] 
-              } 
-            : t
-        );
-        
-        saveTasksToStorage(updatedTasksWithResponse);
-        setActiveTask(updatedTasksWithResponse.find(t => t.id === activeTask.id) || null);
-        setIsSendingChat(false);
-      }, 1000);
+        while (heightLeft > 0) {
+          position = position - pageHeight + 20;
+          heightLeft = heightLeft - (pageHeight - 50);
+          
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 20, position, imgWidth, imgHeight);
+        }
+      }
+      
+      // Save the PDF
+      const filename = `${activeTask.title.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+      pdf.save(filename);
+      
+      toast({
+        title: "PDF erfolgreich erstellt",
+        description: `Die Datei ${filename} wurde heruntergeladen.`,
+      });
     } catch (error) {
+      console.error("PDF export error:", error);
       toast({
         title: "Fehler",
-        description: "Es gab ein Problem beim Senden deiner Nachricht.",
+        description: "Es gab ein Problem beim Exportieren als PDF.",
         variant: "destructive",
       });
-      setIsSendingChat(false);
-    }
-  };
-  
-  // Generiere eine Lehrerperson-Antwort
-  const generateAssistantResponse = (message: string, task: Task) => {
-    const lowerMessage = message.toLowerCase();
-    
-    if (lowerMessage.includes("lösung") || lowerMessage.includes("hilfe") || lowerMessage.includes("verstehe nicht")) {
-      return "Ich kann dir Hinweise geben, aber keine kompletten Lösungen. Versuche, die Aufgabe in kleinere Teilprobleme zu zerlegen und überlege, welche Konzepte aus dem Unterricht relevant sein könnten.";
-    } else if (lowerMessage.includes("bewertung") || lowerMessage.includes("note") || lowerMessage.includes("punkte")) {
-      return "Die Bewertung erfolgt nach fachlichen und didaktischen Kriterien. Eine gute Antwort zeigt ein tiefes Verständnis des Themas, behandelt alle relevanten Aspekte der Fragestellung und ist klar strukturiert.";
-    } else if (lowerMessage.includes("frist") || lowerMessage.includes("abgabe") || lowerMessage.includes("zeit")) {
-      return `Die Abgabefrist für diese Aufgabe ist am ${task.dueDate || "Ende der Woche"}. Planungstipp: Beginne frühzeitig, um genug Zeit für Recherche und Überarbeitung zu haben.`;
-    } else {
-      return "Danke für deine Nachricht. Bitte sei bei Fragen möglichst spezifisch, damit ich dir gezielt helfen kann. Wenn du Schwierigkeiten mit bestimmten Konzepten hast, kannst du auch Teile deiner Antwort vorab teilen, um Feedback zu erhalten.";
+    } finally {
+      setIsExporting(false);
     }
   };
   
@@ -563,20 +612,59 @@ const TasksPage = () => {
                           <ReactMarkdown>{question.question}</ReactMarkdown>
                         </div>
                         
-                        <RadioGroup 
-                          value={question.userAnswer?.toString()} 
-                          onValueChange={(value) => handleQuestionAnswer(question.id, parseInt(value))}
-                          className="space-y-2"
-                        >
-                          {question.options.map((option, index) => (
-                            <div key={index} className="flex items-center space-x-2 border rounded-md p-3 hover:bg-muted/50">
-                              <RadioGroupItem value={index.toString()} id={`question-${question.id}-option-${index}`} />
-                              <Label htmlFor={`question-${question.id}-option-${index}`} className="flex-1 cursor-pointer">
-                                {option}
+                        {/* Multiple Choice Question */}
+                        {question.answerType === 'multiple-choice' && question.options && (
+                          <RadioGroup 
+                            value={question.userAnswer?.toString()} 
+                            onValueChange={(value) => handleMultipleChoiceAnswer(question.id, parseInt(value))}
+                            className="space-y-2"
+                          >
+                            {question.options.map((option, index) => (
+                              <div key={index} className="flex items-center space-x-2 border rounded-md p-3 hover:bg-muted/50">
+                                <RadioGroupItem value={index.toString()} id={`question-${question.id}-option-${index}`} />
+                                <Label htmlFor={`question-${question.id}-option-${index}`} className="flex-1 cursor-pointer">
+                                  {option}
+                                </Label>
+                              </div>
+                            ))}
+                          </RadioGroup>
+                        )}
+                        
+                        {/* Text Question */}
+                        {question.answerType === 'text' && (
+                          <div className="space-y-2">
+                            <Label htmlFor={`question-${question.id}-text`}>Deine Antwort:</Label>
+                            <Textarea 
+                              id={`question-${question.id}-text`}
+                              value={question.userAnswer as string || ''}
+                              onChange={(e) => handleTextAnswer(question.id, e.target.value)}
+                              placeholder="Schreibe deine Antwort hier..."
+                              className="min-h-20"
+                            />
+                          </div>
+                        )}
+                        
+                        {/* True/False Question */}
+                        {question.answerType === 'true-false' && (
+                          <RadioGroup 
+                            value={question.userAnswer?.toString() || ''} 
+                            onValueChange={(value) => handleTrueFalseAnswer(question.id, value === 'true')}
+                            className="space-y-2"
+                          >
+                            <div className="flex items-center space-x-2 border rounded-md p-3 hover:bg-muted/50">
+                              <RadioGroupItem value="true" id={`question-${question.id}-true`} />
+                              <Label htmlFor={`question-${question.id}-true`} className="flex-1 cursor-pointer">
+                                Wahr
                               </Label>
                             </div>
-                          ))}
-                        </RadioGroup>
+                            <div className="flex items-center space-x-2 border rounded-md p-3 hover:bg-muted/50">
+                              <RadioGroupItem value="false" id={`question-${question.id}-false`} />
+                              <Label htmlFor={`question-${question.id}-false`} className="flex-1 cursor-pointer">
+                                Falsch
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        )}
                       </div>
                     ))}
                     <Button 
@@ -623,128 +711,34 @@ const TasksPage = () => {
               </div>
             )}
 
-            {/* Show submitted answer */}
-            {activeTask.status !== "pending" && (
-              <div className="space-y-4">
-                {activeTask.type === "quiz" && activeTask.questions ? (
-                  <div className="space-y-6 border rounded-md p-4 bg-muted/30">
-                    <h3 className="font-medium">Deine Quiz-Antworten:</h3>
-                    {activeTask.questions.map((question, qIndex) => (
-                      <div key={question.id} className="space-y-2">
-                        <p className="font-medium">Frage {qIndex + 1}: {question.question}</p>
-                        <p className={`ml-4 ${
-                          activeTask.status === "graded" && question.userAnswer !== undefined
-                            ? question.userAnswer === question.correctOption
-                              ? "text-green-600 dark:text-green-400"
-                              : "text-red-600 dark:text-red-400"
-                            : ""
-                        }`}>
-                          Deine Antwort: {question.userAnswer !== undefined ? question.options[question.userAnswer] : "Keine Antwort"}
-                          {activeTask.status === "graded" && question.userAnswer !== undefined && (
-                            question.userAnswer === question.correctOption
-                              ? " ✓"
-                              : " ✗"
-                          )}
-                        </p>
-                        {activeTask.status === "graded" && question.userAnswer !== question.correctOption && (
-                          <p className="ml-4 text-green-600 dark:text-green-400">
-                            Richtige Antwort: {question.options[question.correctOption]}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : activeTask.answer ? (
-                  <div className="space-y-2">
-                    <h3 className="font-medium">Deine Antwort:</h3>
-                    <div className="rounded-md border bg-muted/30 p-3 text-sm">
-                      {activeTask.answer}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            )}
-
-            {activeTask.status === "submitted" && (
-              <div className="rounded-md bg-yellow-50 border border-yellow-200 p-3 dark:bg-yellow-900/30 dark:border-yellow-700">
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 text-yellow-800 dark:text-yellow-400 animate-spin" />
-                  <p className="text-sm text-yellow-800 dark:text-yellow-400">
-                    Deine Antwort wird bewertet...
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {activeTask.status === "graded" && activeTask.feedback && (
-              <div className="space-y-2">
-                <h3 className="font-medium">Feedback:</h3>
-                <div className="rounded-md bg-green-50 border border-green-200 p-3 text-sm text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300 prose prose-sm max-w-none dark:prose-invert">
-                  <ReactMarkdown>{activeTask.feedback}</ReactMarkdown>
-                </div>
-                <div className="flex items-center justify-between pt-2">
-                  <span className="text-sm font-medium">Bewertung:</span>
-                  <span className={`font-medium ${activeTask.grade === "Sehr gut" || activeTask.grade === "Gut" ? "text-green-600 dark:text-green-400" : activeTask.grade === "Befriedigend" ? "text-yellow-600 dark:text-yellow-400" : "text-red-600 dark:text-red-400"}`}>
-                    {activeTask.grade}
-                  </span>
-                </div>
-              </div>
-            )}
-            
-            {/* Chat-Bereich für Rückfragen */}
-            {activeTask.status !== "pending" && (
-              <div className="mt-6 border-t pt-4">
-                <h3 className="font-medium mb-2 flex items-center">
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Rückfragen zur Aufgabe
-                </h3>
-                
-                {/* Chat-Nachrichten */}
-                <div className="rounded-md border bg-muted/30 mb-3 p-2 max-h-60 overflow-y-auto">
-                  {activeTask.messages && activeTask.messages.length > 0 ? (
-                    <div className="space-y-3">
-                      {activeTask.messages.map(message => (
-                        <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-                          <div className={`max-w-[80%] rounded-lg p-2 text-sm ${
-                            message.role === "user" 
-                              ? "bg-primary text-primary-foreground" 
-                              : "bg-secondary text-secondary-foreground"
-                          }`}>
-                            <ReactMarkdown>{message.content}</ReactMarkdown>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-center text-muted-foreground py-4">
-                      Noch keine Nachrichten. Stelle eine Frage zur Aufgabe.
-                    </p>
-                  )}
-                </div>
-                
-                {/* Chat-Eingabefeld */}
-                <div className="flex gap-2">
-                  <Input
-                    value={chatMessage}
-                    onChange={(e) => setChatMessage(e.target.value)}
-                    placeholder="Stelle eine Frage zur Aufgabe..."
-                    className="flex-1"
-                  />
-                  <Button 
-                    onClick={handleSendChatMessage}
-                    disabled={isSendingChat || !chatMessage.trim()}
-                    size="sm"
-                  >
-                    {isSendingChat ? <Loader2 className="h-4 w-4 animate-spin" /> : "Senden"}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-};
-
-export default TasksPage;
+            {/* Content to be exported as PDF */}
+            <div ref={pdfContentRef} className="space-y-4">
+              {/* Show submitted answer */}
+              {activeTask.status !== "pending" && (
+                <div className="space-y-4">
+                  {activeTask.type === "quiz" && activeTask.questions ? (
+                    <div className="space-y-6 border rounded-md p-4 bg-muted/30">
+                      <h3 className="font-medium">Deine Quiz-Antworten:</h3>
+                      {activeTask.questions.map((question, qIndex) => {
+                        let isCorrect = false;
+                        
+                        if (question.answerType === 'multiple-choice') {
+                          isCorrect = question.userAnswer === question.correctOption;
+                        } else if (question.answerType === 'text' && question.correctAnswer && question.userAnswer) {
+                          isCorrect = typeof question.userAnswer === 'string' && 
+                                      question.userAnswer.toLowerCase() === question.correctAnswer.toLowerCase();
+                        } else if (question.answerType === 'true-false') {
+                          isCorrect = question.userAnswer === question.correctAnswer;
+                        }
+                        
+                        return (
+                          <div key={question.id} className="space-y-2">
+                            <div className="prose prose-sm max-w-none dark:prose-invert">
+                              <p className="font-medium">Frage {qIndex + 1}:</p>
+                              <ReactMarkdown>{question.question}</ReactMarkdown>
+                            </div>
+                            
+                            <p className={`ml-4 ${
+                              activeTask.status === "graded"
+                                ? isCorrect
+                                  ? "text-green
