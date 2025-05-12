@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -600,6 +601,28 @@ const TasksPage = () => {
               </div>
             </div>
 
+            {/* PDF Export Button */}
+            <div className="flex justify-end">
+              <Button
+                onClick={exportToPDF}
+                disabled={isExporting}
+                variant="outline"
+                size="sm"
+              >
+                {isExporting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Exportiere...
+                  </>
+                ) : (
+                  <>
+                    <FilePdf className="mr-2 h-4 w-4" />
+                    Als PDF exportieren
+                  </>
+                )}
+              </Button>
+            </div>
+
             {activeTask.status === "pending" && (
               <div className="space-y-4">
                 {/* Quiz Type Task */}
@@ -741,4 +764,99 @@ const TasksPage = () => {
                             <p className={`ml-4 ${
                               activeTask.status === "graded"
                                 ? isCorrect
-                                  ? "text-green
+                                  ? "text-green-600 dark:text-green-400"
+                                  : "text-red-600 dark:text-red-400"
+                                : ""
+                            }`}>
+                              {activeTask.status === "graded" && (isCorrect ? "✓ Richtig" : "✗ Falsch")}
+                              {question.answerType === 'multiple-choice' && question.options && question.userAnswer !== undefined && (
+                                <>
+                                  <br />
+                                  <span className="text-sm">
+                                    Deine Antwort: {question.options[question.userAnswer as number]}
+                                  </span>
+                                  {activeTask.status === "graded" && !isCorrect && question.correctOption !== undefined && (
+                                    <>
+                                      <br />
+                                      <span className="text-sm">
+                                        Richtige Antwort: {question.options[question.correctOption]}
+                                      </span>
+                                    </>
+                                  )}
+                                </>
+                              )}
+                              {question.answerType === 'text' && (
+                                <>
+                                  <br />
+                                  <span className="text-sm">
+                                    Deine Antwort: {question.userAnswer || "Keine Antwort"}
+                                  </span>
+                                  {activeTask.status === "graded" && !isCorrect && question.correctAnswer && (
+                                    <>
+                                      <br />
+                                      <span className="text-sm">
+                                        Richtige Antwort: {question.correctAnswer}
+                                      </span>
+                                    </>
+                                  )}
+                                </>
+                              )}
+                              {question.answerType === 'true-false' && question.userAnswer && (
+                                <>
+                                  <br />
+                                  <span className="text-sm">
+                                    Deine Antwort: {question.userAnswer === "true" ? "Wahr" : "Falsch"}
+                                  </span>
+                                  {activeTask.status === "graded" && !isCorrect && question.correctAnswer && (
+                                    <>
+                                      <br />
+                                      <span className="text-sm">
+                                        Richtige Antwort: {question.correctAnswer === "true" ? "Wahr" : "Falsch"}
+                                      </span>
+                                    </>
+                                  )}
+                                </>
+                              )}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="border rounded-md p-4 bg-muted/30">
+                      <h3 className="font-medium mb-2">Deine Antwort:</h3>
+                      <p className="whitespace-pre-wrap">{activeTask.answer}</p>
+                    </div>
+                  )}
+
+                  {/* Feedback and Grade */}
+                  {activeTask.status === "graded" && (
+                    <div className="border rounded-md p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-medium">Bewertung:</h3>
+                        <span className={`font-medium ${
+                          activeTask.grade === "Sehr gut" || activeTask.grade === "Gut" 
+                            ? "text-green-600 dark:text-green-400" 
+                            : activeTask.grade === "Befriedigend" 
+                              ? "text-yellow-600 dark:text-yellow-400" 
+                              : "text-red-600 dark:text-red-400"
+                        }`}>
+                          {activeTask.grade}
+                        </span>
+                      </div>
+                      <div className="prose prose-sm max-w-none dark:prose-invert">
+                        <ReactMarkdown>{activeTask.feedback || ""}</ReactMarkdown>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+};
+
+export default TasksPage;

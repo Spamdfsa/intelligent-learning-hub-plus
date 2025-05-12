@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -803,4 +804,234 @@ Die Zusammenfassung soll gut strukturiert und leicht verständlich sein, mit kla
                     <div
                       key={message.id}
                       className={`flex ${
-                        message.role === "user" ? "justify-end
+                        message.role === "user" ? "justify-end" : "justify-start"
+                      }`}
+                    >
+                      <div
+                        className={`rounded-lg p-4 max-w-[80%] ${
+                          message.role === "user"
+                            ? "bg-primary text-primary-foreground ml-auto"
+                            : "bg-muted"
+                        }`}
+                      >
+                        {message.role !== "user" && (
+                          <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+                            <Bot className="h-4 w-4" />
+                            <span>KI-Tutor</span>
+                          </div>
+                        )}
+                        <div className="whitespace-pre-wrap">{message.content}</div>
+                      </div>
+                    </div>
+                  ))}
+                  {isLoading && (
+                    <div className="flex justify-start">
+                      <div className="rounded-lg p-4 bg-muted flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>KI-Tutor denkt nach...</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="border-t p-4">
+                  <form onSubmit={handleSendMessage} className="flex gap-2">
+                    <Textarea
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      placeholder="Stelle eine Frage zum Kursinhalt..."
+                      className="min-h-12 flex-grow resize-none"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          if (input.trim()) handleSendMessage(e);
+                        }
+                      }}
+                    />
+                    <Button type="submit" disabled={!input.trim() || isLoading}>
+                      <Send className="h-4 w-4" />
+                      <span className="sr-only">Senden</span>
+                    </Button>
+                  </form>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="quiz" className="space-y-4 pt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Quiz generieren</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="course" className="block text-sm font-medium">
+                  Kurs
+                </label>
+                <Input 
+                  id="course"
+                  value={courseSelection} 
+                  onChange={(e) => setCourseSelection(e.target.value)}
+                  placeholder="Kursname eingeben" 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="questionCount" className="block text-sm font-medium">
+                  Anzahl der Fragen
+                </label>
+                <select 
+                  id="questionCount"
+                  value={questionCount} 
+                  onChange={(e) => setQuestionCount(e.target.value)}
+                  className="w-full rounded-md border border-input bg-background px-3 h-10"
+                >
+                  <option value="3">3</option>
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="15">15</option>
+                </select>
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="difficulty" className="block text-sm font-medium">
+                  Schwierigkeitsgrad
+                </label>
+                <select 
+                  id="difficulty"
+                  value={difficulty} 
+                  onChange={(e) => setDifficulty(e.target.value)}
+                  className="w-full rounded-md border border-input bg-background px-3 h-10"
+                >
+                  <option value="Einfach">Einfach</option>
+                  <option value="Mittel">Mittel</option>
+                  <option value="Schwer">Schwer</option>
+                </select>
+              </div>
+              
+              <Button 
+                className="w-full" 
+                onClick={handleGenerateQuiz} 
+                disabled={isLoading || !courseSelection.trim()}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generiere Quiz...
+                  </>
+                ) : (
+                  <>
+                    <Bot className="mr-2 h-4 w-4" />
+                    Quiz generieren
+                  </>
+                )}
+              </Button>
+              
+              {generatedContent && generatedContent.type === "quiz" && (
+                <div className="mt-4 p-4 border rounded-md bg-muted/50">
+                  <h3 className="font-medium text-lg flex items-center gap-2 mb-2">
+                    <Check className="h-5 w-5 text-green-500" />
+                    Quiz erfolgreich generiert
+                  </h3>
+                  <p className="mb-4 text-sm">
+                    Ein neues Quiz wurde erstellt und zu deinen Aufgaben hinzugefügt.
+                  </p>
+                  <Button onClick={handleNavigateToTasks} className="w-full" variant="outline">
+                    <ArrowRight className="mr-2 h-4 w-4" />
+                    Zu den Aufgaben gehen
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="summary" className="space-y-4 pt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Zusammenfassung generieren</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="courseSummary" className="block text-sm font-medium">
+                  Kurs
+                </label>
+                <Input 
+                  id="courseSummary"
+                  value={courseSelection} 
+                  onChange={(e) => setCourseSelection(e.target.value)}
+                  placeholder="Kursname eingeben" 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="module" className="block text-sm font-medium">
+                  Modul (optional)
+                </label>
+                <Input 
+                  id="module"
+                  value={moduleSelection} 
+                  onChange={(e) => setModuleSelection(e.target.value)}
+                  placeholder="Modulname oder 'Alle Module'" 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="style" className="block text-sm font-medium">
+                  Stil der Zusammenfassung
+                </label>
+                <select 
+                  id="style"
+                  value={summaryStyle} 
+                  onChange={(e) => setSummaryStyle(e.target.value)}
+                  className="w-full rounded-md border border-input bg-background px-3 h-10"
+                >
+                  <option value="Kurz und prägnant">Kurz und prägnant</option>
+                  <option value="Detailliert mit Beispielen">Detailliert mit Beispielen</option>
+                  <option value="Akademischer Stil">Akademischer Stil</option>
+                  <option value="Einfache Sprache">Einfache Sprache</option>
+                </select>
+              </div>
+              
+              <Button 
+                className="w-full" 
+                onClick={handleGenerateSummary}
+                disabled={isLoading || !courseSelection.trim()}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generiere Zusammenfassung...
+                  </>
+                ) : (
+                  <>
+                    <Bot className="mr-2 h-4 w-4" />
+                    Zusammenfassung erstellen
+                  </>
+                )}
+              </Button>
+              
+              {generatedContent && generatedContent.type === "summary" && (
+                <div className="mt-4 p-4 border rounded-md bg-muted/50">
+                  <h3 className="font-medium text-lg flex items-center gap-2 mb-2">
+                    <Check className="h-5 w-5 text-green-500" />
+                    Zusammenfassung erfolgreich generiert
+                  </h3>
+                  <p className="mb-4 text-sm">
+                    Eine neue Zusammenfassung wurde erstellt und zu deiner Sammlung hinzugefügt.
+                  </p>
+                  <Button onClick={handleNavigateToSummaries} className="w-full" variant="outline">
+                    <ArrowRight className="mr-2 h-4 w-4" />
+                    Zu den Zusammenfassungen gehen
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default AiTutor;
