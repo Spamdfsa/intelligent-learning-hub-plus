@@ -7,6 +7,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Check, Clock, Loader2, X, MessageCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import ReactMarkdown from 'react-markdown';
+
+interface QuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctOption: number;
+  userAnswer?: number;
+}
 
 interface Task {
   id: string;
@@ -23,6 +34,7 @@ interface Task {
   submittedAt?: Date;
   generatedBy: "ai" | "teacher";
   messages?: {id: string, content: string, role: "user" | "assistant", timestamp: Date}[];
+  questions?: QuizQuestion[];
 }
 
 const TasksPage = () => {
@@ -52,18 +64,46 @@ const TasksPage = () => {
     setIsSubmitting(true);
     
     try {
-      // Speichere die Antwort des Benutzers
-      const updatedTasks = tasks.map(t => 
-        t.id === task.id 
-          ? { 
-              ...t, 
-              status: "submitted" as const, 
-              answer, 
-              submittedAt: new Date() 
-            } 
-          : t
-      );
+      let updatedTask = { ...task };
+
+      // Handle different task types
+      if (task.type === 'quiz' && task.questions) {
+        // For quiz tasks, all questions must have an answer
+        const allQuestionsAnswered = task.questions.every(q => q.userAnswer !== undefined);
+        
+        if (!allQuestionsAnswered) {
+          toast({
+            title: "Unvollständiges Quiz",
+            description: "Bitte beantworte alle Fragen, bevor du das Quiz einreichst.",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
+        updatedTask.status = "submitted";
+        updatedTask.submittedAt = new Date();
+      } else {
+        // For non-quiz tasks
+        if (!answer.trim()) {
+          toast({
+            title: "Leere Antwort",
+            description: "Bitte gib eine Antwort ein, bevor du die Aufgabe einreichst.",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+        
+        updatedTask = {
+          ...task,
+          status: "submitted",
+          answer,
+          submittedAt: new Date()
+        };
+      }
       
+      const updatedTasks = tasks.map(t => t.id === task.id ? updatedTask : t);
       saveTasksToStorage(updatedTasks);
       setActiveTask(updatedTasks.find(t => t.id === task.id) || null);
       
@@ -73,7 +113,7 @@ const TasksPage = () => {
       });
       
       // Nach der Einreichung automatisch bewerten
-      await handleGradeSubmission(task.id, answer);
+      await handleGradeSubmission(task.id);
     } catch (error) {
       toast({
         title: "Fehler",
@@ -85,7 +125,23 @@ const TasksPage = () => {
     }
   };
   
-  const handleGradeSubmission = async (taskId: string, studentAnswer: string) => {
+  const handleQuestionAnswer = (questionId: string, optionIndex: number) => {
+    if (!activeTask || !activeTask.questions) return;
+    
+    const updatedQuestions = activeTask.questions.map(question => 
+      question.id === questionId 
+        ? { ...question, userAnswer: optionIndex } 
+        : question
+    );
+    
+    const updatedTask = { ...activeTask, questions: updatedQuestions };
+    const updatedTasks = tasks.map(t => t.id === activeTask.id ? updatedTask : t);
+    
+    saveTasksToStorage(updatedTasks);
+    setActiveTask(updatedTask);
+  };
+  
+  const handleGradeSubmission = async (taskId: string) => {
     setIsGrading(true);
     
     try {
@@ -98,8 +154,63 @@ const TasksPage = () => {
           throw new Error("Aufgabe nicht gefunden");
         }
         
-        // Hole die verbesserte Bewertung vom evaluateAnswer
-        const { feedback, grade } = evaluateAnswer(studentAnswer, task);
+        let feedback = "";
+        let grade = "";
+        let correctAnswers = 0;
+        let totalQuestions = 0;
+        
+        // Bewertung je nach Aufgabentyp
+        if (task.type === 'quiz' && task.questions) {
+          totalQuestions = task.questions.length;
+          
+          // Zähle korrekte Antworten
+          task.questions.forEach(question => {
+            if (question.userAnswer === question.correctOption) {
+              correctAnswers++;
+            }
+          });
+          
+          const percentageCorrect = (correctAnswers / totalQuestions) * 100;
+          
+          // Bewertung basierend auf Prozentsatz
+          if (percentageCorrect >= 90) {
+            grade = "Sehr gut";
+            feedback = `Du hast ${correctAnswers} von ${totalQuestions} Fragen richtig beantwortet (${percentageCorrect.toFixed(1)}%). Hervorragende Leistung!`;
+          } else if (percentageCorrect >= 80) {
+            grade = "Gut";
+            feedback = `Du hast ${correctAnswers} von ${totalQuestions} Fragen richtig beantwortet (${percentageCorrect.toFixed(1)}%). Gute Arbeit!`;
+          } else if (percentageCorrect >= 70) {
+            grade = "Befriedigend";
+            feedback = `Du hast ${correctAnswers} von ${totalQuestions} Fragen richtig beantwortet (${percentageCorrect.toFixed(1)}%). Solide Leistung, aber es gibt noch Raum für Verbesserung.`;
+          } else if (percentageCorrect >= 60) {
+            grade = "Ausreichend";
+            feedback = `Du hast ${correctAnswers} von ${totalQuestions} Fragen richtig beantwortet (${percentageCorrect.toFixed(1)}%). Du solltest die Themen noch einmal wiederholen.`;
+          } else {
+            grade = "Mangelhaft";
+            feedback = `Du hast ${correctAnswers} von ${totalQuestions} Fragen richtig beantwortet (${percentageCorrect.toFixed(1)}%). Bitte arbeite die Materialien noch einmal durch und versuche es erneut.`;
+          }
+          
+          // Füge detailliertes Feedback zu jeder Frage hinzu
+          feedback += "\n\n### Detailliertes Feedback:\n\n";
+          task.questions.forEach((question, index) => {
+            const isCorrect = question.userAnswer === question.correctOption;
+            feedback += `**Frage ${index + 1}:** ${isCorrect ? '✓ Richtig' : '✗ Falsch'}\n`;
+            feedback += `> ${question.question}\n\n`;
+            feedback += `Deine Antwort: ${question.options[question.userAnswer || 0]}\n`;
+            
+            if (!isCorrect) {
+              feedback += `Richtige Antwort: ${question.options[question.correctOption]}\n\n`;
+            } else {
+              feedback += '\n';
+            }
+          });
+          
+        } else {
+          // Für nicht-Quiz Aufgaben, verwende die bestehende Bewertungsfunktion
+          const result = evaluateAnswer(task.answer || "", task);
+          feedback = result.feedback;
+          grade = result.grade;
+        }
         
         const updatedTasks = tasks.map(t => 
           t.id === taskId 
@@ -203,9 +314,9 @@ const TasksPage = () => {
 
     // Lösungsvorschlag für ungenügende oder mangelhafte Antworten hinzufügen
     if (grade === "Ungenügend" || grade === "Mangelhaft") {
-      feedback += "\n\nHier ist ein Ansatz, wie die Aufgabe besser gelöst werden könnte:\n";
+      feedback += "\n\n### Lösungsvorschlag:\n\n";
       feedback += generateSampleSolution(task);
-      feedback += "\n\nNutze den Chat, um Rückfragen zu stellen oder klärende Fragen zur Aufgabe zu stellen.";
+      feedback += "\n\n*Nutze den Chat, um Rückfragen zu stellen oder klärende Fragen zur Aufgabe zu stellen.*";
     }
     
     return { feedback, grade };
@@ -435,41 +546,122 @@ const TasksPage = () => {
           <CardContent className="space-y-4">
             <div>
               <h3 className="font-medium mb-2">Aufgabenbeschreibung:</h3>
-              <p className="text-sm">{activeTask.description}</p>
+              <div className="text-sm prose prose-sm max-w-none dark:prose-invert">
+                <ReactMarkdown>{activeTask.description}</ReactMarkdown>
+              </div>
             </div>
 
             {activeTask.status === "pending" && (
-              <div className="space-y-2">
-                <h3 className="font-medium">Deine Antwort:</h3>
-                <Textarea
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                  placeholder="Schreibe deine Antwort hier..."
-                  className="min-h-32"
-                />
-                <Button 
-                  onClick={() => handleSubmitAnswer(activeTask)}
-                  disabled={isSubmitting || !answer.trim()}
-                  className="w-full mt-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Wird eingereicht...
-                    </>
-                  ) : (
-                    "Antwort einreichen"
-                  )}
-                </Button>
+              <div className="space-y-4">
+                {/* Quiz Type Task */}
+                {activeTask.type === "quiz" && activeTask.questions && activeTask.questions.length > 0 ? (
+                  <div className="space-y-6">
+                    {activeTask.questions.map((question, qIndex) => (
+                      <div key={question.id} className="space-y-3 border rounded-md p-4 bg-card/50">
+                        <h4 className="font-medium text-base">Frage {qIndex + 1}:</h4>
+                        <div className="prose prose-sm max-w-none dark:prose-invert mb-3">
+                          <ReactMarkdown>{question.question}</ReactMarkdown>
+                        </div>
+                        
+                        <RadioGroup 
+                          value={question.userAnswer?.toString()} 
+                          onValueChange={(value) => handleQuestionAnswer(question.id, parseInt(value))}
+                          className="space-y-2"
+                        >
+                          {question.options.map((option, index) => (
+                            <div key={index} className="flex items-center space-x-2 border rounded-md p-3 hover:bg-muted/50">
+                              <RadioGroupItem value={index.toString()} id={`question-${question.id}-option-${index}`} />
+                              <Label htmlFor={`question-${question.id}-option-${index}`} className="flex-1 cursor-pointer">
+                                {option}
+                              </Label>
+                            </div>
+                          ))}
+                        </RadioGroup>
+                      </div>
+                    ))}
+                    <Button 
+                      onClick={() => handleSubmitAnswer(activeTask)}
+                      disabled={isSubmitting}
+                      className="w-full mt-4"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Quiz wird eingereicht...
+                        </>
+                      ) : (
+                        "Quiz einreichen"
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  /* Non-Quiz Tasks */
+                  <div className="space-y-2">
+                    <h3 className="font-medium">Deine Antwort:</h3>
+                    <Textarea
+                      value={answer}
+                      onChange={(e) => setAnswer(e.target.value)}
+                      placeholder="Schreibe deine Antwort hier..."
+                      className="min-h-32"
+                    />
+                    <Button 
+                      onClick={() => handleSubmitAnswer(activeTask)}
+                      disabled={isSubmitting || !answer.trim()}
+                      className="w-full mt-2"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Wird eingereicht...
+                        </>
+                      ) : (
+                        "Antwort einreichen"
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 
-            {activeTask.status !== "pending" && activeTask.answer && (
-              <div className="space-y-2">
-                <h3 className="font-medium">Deine Antwort:</h3>
-                <div className="rounded-md border bg-muted/30 p-3 text-sm">
-                  {activeTask.answer}
-                </div>
+            {/* Show submitted answer */}
+            {activeTask.status !== "pending" && (
+              <div className="space-y-4">
+                {activeTask.type === "quiz" && activeTask.questions ? (
+                  <div className="space-y-6 border rounded-md p-4 bg-muted/30">
+                    <h3 className="font-medium">Deine Quiz-Antworten:</h3>
+                    {activeTask.questions.map((question, qIndex) => (
+                      <div key={question.id} className="space-y-2">
+                        <p className="font-medium">Frage {qIndex + 1}: {question.question}</p>
+                        <p className={`ml-4 ${
+                          activeTask.status === "graded" && question.userAnswer !== undefined
+                            ? question.userAnswer === question.correctOption
+                              ? "text-green-600 dark:text-green-400"
+                              : "text-red-600 dark:text-red-400"
+                            : ""
+                        }`}>
+                          Deine Antwort: {question.userAnswer !== undefined ? question.options[question.userAnswer] : "Keine Antwort"}
+                          {activeTask.status === "graded" && question.userAnswer !== undefined && (
+                            question.userAnswer === question.correctOption
+                              ? " ✓"
+                              : " ✗"
+                          )}
+                        </p>
+                        {activeTask.status === "graded" && question.userAnswer !== question.correctOption && (
+                          <p className="ml-4 text-green-600 dark:text-green-400">
+                            Richtige Antwort: {question.options[question.correctOption]}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : activeTask.answer ? (
+                  <div className="space-y-2">
+                    <h3 className="font-medium">Deine Antwort:</h3>
+                    <div className="rounded-md border bg-muted/30 p-3 text-sm">
+                      {activeTask.answer}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             )}
 
@@ -487,8 +679,8 @@ const TasksPage = () => {
             {activeTask.status === "graded" && activeTask.feedback && (
               <div className="space-y-2">
                 <h3 className="font-medium">Feedback:</h3>
-                <div className="rounded-md bg-green-50 border border-green-200 p-3 text-sm text-green-800 whitespace-pre-line dark:bg-green-900/20 dark:border-green-800 dark:text-green-300">
-                  {activeTask.feedback}
+                <div className="rounded-md bg-green-50 border border-green-200 p-3 text-sm text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300 prose prose-sm max-w-none dark:prose-invert">
+                  <ReactMarkdown>{activeTask.feedback}</ReactMarkdown>
                 </div>
                 <div className="flex items-center justify-between pt-2">
                   <span className="text-sm font-medium">Bewertung:</span>
@@ -518,7 +710,7 @@ const TasksPage = () => {
                               ? "bg-primary text-primary-foreground" 
                               : "bg-secondary text-secondary-foreground"
                           }`}>
-                            {message.content}
+                            <ReactMarkdown>{message.content}</ReactMarkdown>
                           </div>
                         </div>
                       ))}

@@ -239,8 +239,24 @@ Nutze diese Informationen, um personalisierte Hilfe zu geben. Wenn Informationen
         throw new Error("API-Schlüssel fehlt");
       }
 
-      // Call OpenAI API to generate quiz
-      const prompt = `Erstelle ein Quiz zum Thema "${courseSelection}" mit ${questionCount} Fragen im Schwierigkeitsgrad "${difficulty}". Formatiere die Ausgabe so, dass jede Frage deutlich nummeriert ist.`;
+      // Call OpenAI API to generate quiz with instructed structure
+      const prompt = `Erstelle ein Quiz zum Thema "${courseSelection}" mit ${questionCount} Fragen im Schwierigkeitsgrad "${difficulty}". 
+      
+Formatiere das Quiz als JSON-Array mit folgender Struktur:
+[
+  {
+    "question": "Frage 1?", 
+    "options": ["Option A", "Option B", "Option C", "Option D"], 
+    "correctOption": 0
+  },
+  {
+    "question": "Frage 2?", 
+    "options": ["Option A", "Option B", "Option C", "Option D"], 
+    "correctOption": 2
+  }
+]
+
+Die "correctOption" ist der Index (beginnend mit 0) der korrekten Antwort im options-Array.`;
       
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -253,7 +269,7 @@ Nutze diese Informationen, um personalisierte Hilfe zu geben. Wenn Informationen
           messages: [
             {
               role: "system",
-              content: "Du bist ein Bildungsexperte, der hochwertige Lernmaterialien erstellt. Erstelle ein Quiz im angegebenen Format."
+              content: "Du bist ein Bildungsexperte, der hochwertige Lernmaterialien erstellt. Erstelle ein Quiz im angegebenen Format. Achte darauf, dass die JSON-Struktur korrekt ist."
             },
             {
               role: "user",
@@ -273,11 +289,47 @@ Nutze diese Informationen, um personalisierte Hilfe zu geben. Wenn Informationen
       const result = await response.json();
       const quizContent = result.choices[0]?.message?.content || "Es konnten keine Quiz-Fragen generiert werden.";
       
+      let parsedQuiz;
+      let questions = [];
+      let formattedDescription = '';
+
+      try {
+        // Try to extract JSON from the response
+        const jsonMatch = quizContent.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          parsedQuiz = JSON.parse(jsonMatch[0]);
+          
+          // Format questions for display in the task description
+          formattedDescription = `# Quiz: ${courseSelection}\n\n`;
+          parsedQuiz.forEach((q, idx) => {
+            formattedDescription += `### Frage ${idx + 1}:\n${q.question}\n\n`;
+            q.options.forEach((opt, optIdx) => {
+              formattedDescription += `- ${opt}\n`;
+            });
+            formattedDescription += '\n';
+          });
+          
+          // Create questions array for the task
+          questions = parsedQuiz.map((q, idx) => ({
+            id: `q-${Date.now()}-${idx}`,
+            question: q.question,
+            options: q.options,
+            correctOption: q.correctOption
+          }));
+        } else {
+          // Fallback if JSON parsing fails
+          formattedDescription = quizContent;
+        }
+      } catch (error) {
+        console.error("Failed to parse quiz JSON:", error);
+        formattedDescription = quizContent;
+      }
+      
       const quizId = uuidv4();
       setGeneratedContent({
         id: quizId,
         title: `Quiz: ${courseSelection}`,
-        content: quizContent,
+        content: formattedDescription,
         timestamp: new Date(),
         type: "quiz"
       });
@@ -285,13 +337,14 @@ Nutze diese Informationen, um personalisierte Hilfe zu geben. Wenn Informationen
       saveToTasks({
         id: quizId,
         title: `Quiz: ${courseSelection}`,
-        description: quizContent,
+        description: formattedDescription,
         course: courseSelection,
         dueDate: getRandomDueDate(),
         status: "pending",
         type: "quiz",
         createdAt: new Date(),
-        generatedBy: "ai"
+        generatedBy: "ai",
+        questions: questions
       });
       
       toast({
@@ -307,13 +360,28 @@ Nutze diese Informationen, um personalisierte Hilfe zu geben. Wenn Informationen
       });
       
       // Fallback to mock quiz if API fails
-      const mockQuizContent = generateMockQuiz(courseSelection, parseInt(questionCount), difficulty);
+      const mockQuiz = generateMockQuiz(courseSelection, parseInt(questionCount), difficulty);
+      const mockQuizContent = mockQuiz.formattedDescription;
       setGeneratedContent({
         id: uuidv4(),
         title: `Quiz: ${courseSelection}`,
         content: mockQuizContent,
         timestamp: new Date(),
         type: "quiz"
+      });
+      
+      const mockQuizId = uuidv4();
+      saveToTasks({
+        id: mockQuizId,
+        title: `Quiz: ${courseSelection}`,
+        description: mockQuizContent,
+        course: courseSelection,
+        dueDate: getRandomDueDate(),
+        status: "pending",
+        type: "quiz",
+        createdAt: new Date(),
+        generatedBy: "ai",
+        questions: mockQuiz.questions
       });
     } finally {
       setIsLoading(false);
@@ -434,20 +502,111 @@ Nutze diese Informationen, um personalisierte Hilfe zu geben. Wenn Informationen
     return `${dueDate.getDate()}.${dueDate.getMonth() + 1}.${dueDate.getFullYear()}`;
   };
   
-  const generateMockQuiz = (course: string, count: number, difficulty: string): string => {
+  const generateMockQuiz = (course: string, count: number, difficulty: string) => {
     const quizQuestions = [
-      { q: "Was sind die Hauptkomponenten eines Von-Neumann-Rechners?", a: "Prozessor, Speicher, Ein-/Ausgabegeräte und Bus-System" },
-      { q: "Wie funktioniert das HTTP-Protokoll?", a: "Es ist ein zustandsloses Protokoll für Client-Server-Kommunikation im Web" },
-      { q: "Was ist der Unterschied zwischen Stack und Heap?", a: "Stack speichert lokale Variablen, Heap speichert dynamisch allozierte Objekte" },
-      { q: "Erkläre die Funktionsweise von Hashtabellen.", a: "Datenstruktur, die Schlüssel-Wert-Paare mittels Hashfunktion speichert" },
-      { q: "Was sind die ACID-Eigenschaften in Datenbanktransaktionen?", a: "Atomarität, Konsistenz, Isolation und Dauerhaftigkeit" },
-      { q: "Wie funktioniert der Quick-Sort-Algorithmus?", a: "Teile-und-herrsche Algorithmus mit Pivot-Element zur Sortierung" },
-      { q: "Was ist Polymorphismus in der objektorientierten Programmierung?", a: "Fähigkeit eines Objekts, in verschiedenen Formen aufzutreten" },
-      { q: "Erkläre den Unterschied zwischen TCP und UDP.", a: "TCP ist verbindungsorientiert und zuverlässig, UDP ist verbindungslos und schneller" },
-      { q: "Was ist ein Deadlock und wie kann er vermieden werden?", a: "Verklemmungszustand von Prozessen, vermeidbar durch Ressourcenzuordnungsstrategien" },
-      { q: "Wie funktioniert das OAuth 2.0-Protokoll?", a: "Autorisierungsframework für sicheren, eingeschränkten Zugriff auf Ressourcen" }
+      { 
+        question: "Was sind die Hauptkomponenten eines Von-Neumann-Rechners?", 
+        options: [
+          "Prozessor, Speicher, Ein-/Ausgabegeräte und Bus-System",
+          "Motherboard, CPU und Grafikkarte",
+          "Festplatte, RAM und Monitor",
+          "Tastatur, Maus und Bildschirm"
+        ],
+        correctOption: 0 
+      },
+      { 
+        question: "Wie funktioniert das HTTP-Protokoll?", 
+        options: [
+          "Es ist ein Protokoll zur Verschlüsselung von Daten",
+          "Es ist ein zustandsloses Protokoll für Client-Server-Kommunikation im Web",
+          "Es ist ein Protokoll für Peer-to-Peer-Netzwerke",
+          "Es ist ein Protokoll zur Ausführung von Skripten auf entfernten Servern"
+        ],
+        correctOption: 1 
+      },
+      { 
+        question: "Was ist der Unterschied zwischen Stack und Heap?", 
+        options: [
+          "Stack ist für lokale Variablen, Heap für dynamisch allozierte Objekte",
+          "Stack ist für Klassendefinitionen, Heap für Instanzvariablen",
+          "Stack ist für Bilder, Heap für Textdaten",
+          "Es gibt keinen Unterschied, beide sind Synonyme"
+        ],
+        correctOption: 0 
+      },
+      { 
+        question: "Erkläre die Funktionsweise von Hashtabellen.", 
+        options: [
+          "Eine hierarchische Datenstruktur zur Organisation von Daten",
+          "Eine Methode zur Kompression von Daten",
+          "Ein Algorithmus zur Sortierung von Listen",
+          "Eine Datenstruktur, die Schlüssel-Wert-Paare mittels Hashfunktion speichert"
+        ],
+        correctOption: 3 
+      },
+      { 
+        question: "Was sind die ACID-Eigenschaften in Datenbanktransaktionen?", 
+        options: [
+          "Asynchronität, Klarheit, Integration und Datensicherheit",
+          "Atomarität, Konsistenz, Isolation und Dauerhaftigkeit",
+          "Abstraktion, Kapselung, Vererbung und Polymorphismus",
+          "Adaptivität, Komplexität, Innovation und Design"
+        ],
+        correctOption: 1 
+      },
+      { 
+        question: "Wie funktioniert der Quick-Sort-Algorithmus?", 
+        options: [
+          "Er teilt Listen in kleinere Teillisten anhand eines Pivot-Elements",
+          "Er vergleicht benachbarte Elemente und tauscht sie bei Bedarf",
+          "Er nutzt ein Heap-Datenstruktur zum Sortieren",
+          "Er sortiert, indem er Elemente an die richtige Position einfügt"
+        ],
+        correctOption: 0 
+      },
+      { 
+        question: "Was ist Polymorphismus in der objektorientierten Programmierung?", 
+        options: [
+          "Die Fähigkeit, private Variablen zu schützen",
+          "Die Fähigkeit eines Objekts, in verschiedenen Formen aufzutreten",
+          "Die Möglichkeit, mehrere Konstruktoren zu definieren",
+          "Die Möglichkeit, Funktionen zu überladen"
+        ],
+        correctOption: 1 
+      },
+      { 
+        question: "Erkläre den Unterschied zwischen TCP und UDP.", 
+        options: [
+          "TCP ist sicherheitsorientiert, UDP ist geschwindigkeitsorientiert",
+          "TCP ist verbindungsorientiert und zuverlässig, UDP ist verbindungslos und schneller",
+          "TCP wird für E-Mails verwendet, UDP für Webseiten",
+          "TCP arbeitet auf Schicht 4, UDP auf Schicht 3 des OSI-Modells"
+        ],
+        correctOption: 1 
+      },
+      { 
+        question: "Was ist ein Deadlock und wie kann er vermieden werden?", 
+        options: [
+          "Ein Virus, der durch Antivirenprogramme bekämpft wird",
+          "Ein Verklemmungszustand von Prozessen, vermeidbar durch Ressourcenzuordnungsstrategien",
+          "Ein Fehler im Quellcode, der durch Debugging gelöst wird",
+          "Ein überlasteter Server, der durch Load-Balancing entlastet wird"
+        ],
+        correctOption: 1 
+      },
+      { 
+        question: "Wie funktioniert das OAuth 2.0-Protokoll?", 
+        options: [
+          "Es ist ein Verschlüsselungsprotokoll für sichere Kommunikation",
+          "Es ist ein Protokoll zur Hardwareauthentifizierung",
+          "Es ist ein Autorisierungsframework für sicheren, eingeschränkten Zugriff auf Ressourcen",
+          "Es ist ein Protokoll für die Verwaltung von Netzwerkgeräten"
+        ],
+        correctOption: 2 
+      }
     ];
     
+    // Select random questions based on count
     const selectedQuestions = [];
     const usedIndices = new Set();
     
@@ -461,9 +620,29 @@ Nutze diese Informationen, um personalisierte Hilfe zu geben. Wenn Informationen
       selectedQuestions.push(quizQuestions[randomIndex]);
     }
     
-    return selectedQuestions.map((q, index) => 
-      `Frage ${index + 1}: ${q.q}\n\nSchwierigkeit: ${difficulty}`
-    ).join("\n\n---\n\n");
+    // Format questions for display in the quiz task
+    let formattedDescription = `# Quiz: ${course}\n\nSchwierigkeitsgrad: ${difficulty}\n\n`;
+    
+    selectedQuestions.forEach((q, idx) => {
+      formattedDescription += `### Frage ${idx + 1}:\n${q.question}\n\n`;
+      q.options.forEach((opt, optIdx) => {
+        formattedDescription += `- ${opt}\n`;
+      });
+      formattedDescription += '\n';
+    });
+    
+    // Create the questions array for the task
+    const questions = selectedQuestions.map((q, idx) => ({
+      id: `q-${Date.now()}-${idx}`,
+      question: q.question,
+      options: q.options,
+      correctOption: q.correctOption
+    }));
+    
+    return {
+      formattedDescription,
+      questions
+    };
   };
   
   const generateMockSummary = (course: string, module: string, style: string): string => {

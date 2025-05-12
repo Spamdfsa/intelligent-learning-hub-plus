@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { mockCourses } from "@/data/mockData";
-import { Course, Module, Task, User } from "@/types";
+import { Course, Module, Task, User, QuizQuestion } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -16,6 +16,9 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CheckCircle, Clock, FileText, MessageCircle, PlayCircle, User as UserIcon, Video } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import ReactMarkdown from "react-markdown";
 
 const CourseDetail = () => {
   const { courseId } = useParams();
@@ -25,6 +28,7 @@ const CourseDetail = () => {
   const [activeTab, setActiveTab] = useState("modules");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showMaterial, setShowMaterial] = useState(false);
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, number>>({});
   const { toast } = useToast();
 
   useEffect(() => {
@@ -43,6 +47,7 @@ const CourseDetail = () => {
 
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
+    setQuizAnswers({});
     setShowMaterial(true);
     
     // Mark as completed if not already
@@ -53,6 +58,42 @@ const CourseDetail = () => {
         description: `${task.title} wurde als abgeschlossen markiert.`,
       });
     }
+  };
+
+  const handleQuizAnswerChange = (questionId: string, answerIndex: number) => {
+    setQuizAnswers(prev => ({
+      ...prev,
+      [questionId]: answerIndex
+    }));
+  };
+
+  const handleQuizSubmit = () => {
+    if (!selectedTask || !selectedTask.questions) return;
+    
+    // Calculate results
+    let correctCount = 0;
+    let totalQuestions = selectedTask.questions.length;
+    
+    selectedTask.questions.forEach(question => {
+      if (quizAnswers[question.id] === question.correctOption) {
+        correctCount++;
+      }
+    });
+    
+    const percentage = (correctCount / totalQuestions) * 100;
+    
+    toast({
+      title: "Quiz Ergebnis",
+      description: `Du hast ${correctCount} von ${totalQuestions} Fragen richtig beantwortet (${percentage.toFixed(0)}%).`,
+    });
+    
+    // Mark task as completed
+    if (selectedTask && !selectedTask.completed && user?.role === "student") {
+      selectedTask.completed = true;
+    }
+    
+    // Close the dialog after a short delay to show the toast
+    setTimeout(() => setShowMaterial(false), 2000);
   };
 
   if (!course) {
@@ -84,8 +125,12 @@ const CourseDetail = () => {
     switch (selectedTask.type) {
       case "reading":
         return (
-          <div className="prose prose-sm max-w-none">
-            <div dangerouslySetInnerHTML={{ __html: selectedTask.content || "<p>Keine Inhalte verfügbar</p>" }} />
+          <div className="prose prose-sm max-w-none dark:prose-invert">
+            {selectedTask.content ? (
+              <div dangerouslySetInnerHTML={{ __html: selectedTask.content }} />
+            ) : (
+              <ReactMarkdown>{selectedTask.description || ""}</ReactMarkdown>
+            )}
           </div>
         );
       case "video":
@@ -108,8 +153,8 @@ const CourseDetail = () => {
               )}
             </div>
             {selectedTask.description && (
-              <div className="prose prose-sm max-w-none">
-                <p>{selectedTask.description}</p>
+              <div className="prose prose-sm max-w-none dark:prose-invert">
+                <ReactMarkdown>{selectedTask.description}</ReactMarkdown>
               </div>
             )}
           </div>
@@ -117,33 +162,53 @@ const CourseDetail = () => {
       case "quiz":
         return (
           <div className="space-y-6">
-            {selectedTask.questions?.map((question, index) => (
-              <div key={question.id} className="space-y-3">
-                <h3 className="font-medium">Frage {index + 1}: {question.question}</h3>
-                <div className="space-y-2">
-                  {question.options.map((option, optIdx) => (
-                    <div key={optIdx} className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted/50">
-                      <input 
-                        type="radio" 
-                        name={`question-${question.id}`} 
-                        id={`question-${question.id}-option-${optIdx}`} 
-                      />
-                      <label htmlFor={`question-${question.id}-option-${optIdx}`}>
-                        {option}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-            <Button className="w-full">Antworten einreichen</Button>
+            <div className="prose prose-sm max-w-none dark:prose-invert">
+              <ReactMarkdown>{selectedTask.description || ""}</ReactMarkdown>
+            </div>
+            
+            {selectedTask.questions && selectedTask.questions.length > 0 ? (
+              <>
+                {selectedTask.questions.map((question: QuizQuestion, index) => (
+                  <div key={question.id} className="space-y-3 border rounded-md p-4">
+                    <h3 className="font-medium">Frage {index + 1}: {question.question}</h3>
+                    <RadioGroup 
+                      value={quizAnswers[question.id]?.toString()} 
+                      onValueChange={(value) => handleQuizAnswerChange(question.id, parseInt(value))}
+                      className="space-y-2"
+                    >
+                      {question.options.map((option, optIdx) => (
+                        <div key={optIdx} className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted/50">
+                          <RadioGroupItem value={optIdx.toString()} id={`question-${question.id}-option-${optIdx}`} />
+                          <Label htmlFor={`question-${question.id}-option-${optIdx}`} className="flex-1 cursor-pointer">
+                            {option}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                ))}
+                <Button 
+                  className="w-full"
+                  onClick={handleQuizSubmit}
+                  disabled={Object.keys(quizAnswers).length < (selectedTask.questions?.length || 0)}
+                >
+                  Quiz einreichen
+                </Button>
+              </>
+            ) : (
+              <p className="text-muted-foreground">Dieses Quiz enthält keine Fragen.</p>
+            )}
           </div>
         );
       case "assignment":
         return (
           <div className="space-y-4">
-            <div className="prose prose-sm max-w-none">
-              <div dangerouslySetInnerHTML={{ __html: selectedTask.content || "<p>Keine Inhalte verfügbar</p>" }} />
+            <div className="prose prose-sm max-w-none dark:prose-invert">
+              {selectedTask.content ? (
+                <div dangerouslySetInnerHTML={{ __html: selectedTask.content }} />
+              ) : (
+                <ReactMarkdown>{selectedTask.description || ""}</ReactMarkdown>
+              )}
             </div>
           </div>
         );
@@ -210,8 +275,8 @@ const CourseDetail = () => {
                         <div 
                           key={task.id} 
                           className={cn(
-                            "task-item",
-                            task.completed && "task-item-completed"
+                            "flex items-center justify-between p-4 hover:bg-accent/50 transition-colors",
+                            task.completed && "bg-green-50 dark:bg-green-900/10"
                           )}
                         >
                           <div className="flex items-center gap-3 flex-1">

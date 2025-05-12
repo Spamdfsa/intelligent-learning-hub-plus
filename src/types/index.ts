@@ -48,11 +48,13 @@ export interface Material {
   created_at: string;
 }
 
-export interface Question {
+export interface QuizQuestion {
   id: string;
   question: string;
   options: string[];
   correctOption: number;
+  userAnswer?: number;
+  explanation?: string;
 }
 
 export interface Task {
@@ -80,7 +82,7 @@ export interface Task {
   completed?: boolean;
   content?: string;
   videoUrl?: string;
-  questions?: Question[];
+  questions?: QuizQuestion[];
   moduleId?: string;
 }
 
@@ -119,3 +121,4 @@ export interface UserSetting {
   value?: string;
   category: "appearance" | "notifications" | "privacy" | "account";
 }
+
