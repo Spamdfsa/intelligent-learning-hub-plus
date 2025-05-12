@@ -145,9 +145,6 @@ const CourseDetail = () => {
             <div className="prose prose-sm max-w-none">
               <div dangerouslySetInnerHTML={{ __html: selectedTask.content || "<p>Keine Inhalte verfügbar</p>" }} />
             </div>
-            <div className="border-t pt-4">
-              <Button>Aufgabe einreichen</Button>
-            </div>
           </div>
         );
       default:
@@ -190,10 +187,9 @@ const CourseDetail = () => {
       )}
 
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="modules">Module</TabsTrigger>
           <TabsTrigger value="overview">Übersicht</TabsTrigger>
-          <TabsTrigger value="discussion">Diskussion</TabsTrigger>
         </TabsList>
 
         <TabsContent value="modules" className="space-y-4 pt-4">
@@ -325,21 +321,6 @@ const CourseDetail = () => {
                   <p className="font-medium">{course.instructor}</p>
                   <p className="text-sm text-muted-foreground">Dozent für {course.category || "Allgemeine Fächer"}</p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="discussion" className="space-y-4 pt-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex flex-col items-center justify-center py-10 text-center space-y-3">
-                <MessageCircle className="h-10 w-10 text-muted-foreground" />
-                <h3 className="font-medium text-lg">Diskussionsforum</h3>
-                <p className="text-muted-foreground">
-                  Hier kannst du Fragen stellen und mit anderen Kursteilnehmern diskutieren.
-                </p>
-                <Button>Neue Diskussion starten</Button>
               </div>
             </CardContent>
           </Card>

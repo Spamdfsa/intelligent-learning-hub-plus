@@ -147,7 +147,7 @@ const SummariesPage = () => {
           <div className="bg-background rounded-lg shadow-lg w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
             <div className="p-4 border-b flex items-center justify-between">
               <h2 className="text-xl font-semibold">{activeSummary.title}</h2>
-              <Button variant="ghost" size="sm" onClick={() => setActiveSummary(null)}>
+              <Button variant="outline" size="sm" onClick={() => setActiveSummary(null)}>
                 Schließen
               </Button>
             </div>
@@ -165,9 +165,6 @@ const SummariesPage = () => {
               </div>
             </div>
             <div className="p-4 border-t flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setActiveSummary(null)}>
-                Schließen
-              </Button>
               <Button onClick={() => handleDownloadPDF(activeSummary)}>
                 <Download className="mr-2 h-4 w-4" />
                 Als PDF herunterladen
