@@ -1,4 +1,3 @@
-
 import { Course } from "@/types";
 
 export const mockCourses: Course[] = [
@@ -50,7 +49,8 @@ export const mockCourses: Course[] = [
                   "Er muss auf einem Computer laufen",
                   "Er muss mathematische Formeln enthalten"
                 ],
-                correctOption: 1
+                correctOption: 1,
+                answerType: "multiple-choice"
               },
               {
                 id: "q-1-1-3-2",
@@ -61,7 +61,8 @@ export const mockCourses: Course[] = [
                   "Wie die Laufzeit mit der Eingabegröße wächst",
                   "Das Alter des Algorithmus in der Informatikgeschichte"
                 ],
-                correctOption: 2
+                correctOption: 2,
+                answerType: "multiple-choice"
               }
             ]
           },
@@ -110,7 +111,8 @@ export const mockCourses: Course[] = [
                   "Binärbaum",
                   "Hashtabelle"
                 ],
-                correctOption: 1
+                correctOption: 1,
+                answerType: "multiple-choice"
               },
               {
                 id: "q-1-2-3-2",
@@ -121,7 +123,8 @@ export const mockCourses: Course[] = [
                   "Bessere Cache-Lokalität",
                   "Weniger Speicherverbrauch"
                 ],
-                correctOption: 1
+                correctOption: 1,
+                answerType: "multiple-choice"
               }
             ]
           },
@@ -184,7 +187,8 @@ export const mockCourses: Course[] = [
                   "Die Haupteingabemethode für Datenbankabfragen",
                   "Ein Schlüssel, der von der Datenbank automatisch erstellt wird"
                 ],
-                correctOption: 1
+                correctOption: 1,
+                answerType: "multiple-choice"
               },
               {
                 id: "q-2-1-4-2",
@@ -195,7 +199,8 @@ export const mockCourses: Course[] = [
                   "Mehrere Datensätze in Tabelle A sind mit mehreren Datensätzen in Tabelle B verbunden",
                   "Es gibt keine Verbindung zwischen den Tabellen"
                 ],
-                correctOption: 1
+                correctOption: 1,
+                answerType: "multiple-choice"
               }
             ]
           },
@@ -287,7 +292,8 @@ export const mockCourses: Course[] = [
                   "Entscheidungsbäume mit gelabelten Daten",
                   "Autoencoders"
                 ],
-                correctOption: 2
+                correctOption: 2,
+                answerType: "multiple-choice"
               },
               {
                 id: "q-3-1-4-2",
@@ -298,7 +304,8 @@ export const mockCourses: Course[] = [
                   "Wenn ein Modell zu einfach ist und keine Muster erkennt",
                   "Wenn ein Modell mehrere Epochen trainiert wird"
                 ],
-                correctOption: 1
+                correctOption: 1,
+                answerType: "multiple-choice"
               }
             ]
           },
@@ -419,7 +426,8 @@ export const mockCourses: Course[] = [
                   "var ist moderner als let",
                   "let kann nur für Zahlen verwendet werden"
                 ],
-                correctOption: 1
+                correctOption: 1,
+                answerType: "multiple-choice"
               },
               {
                 id: "q-4-2-3-2",
@@ -430,7 +438,8 @@ export const mockCourses: Course[] = [
                   "Ein Framework für die Frontendentwicklung",
                   "Ein Fehlerbehandlungsmechanismus"
                 ],
-                correctOption: 1
+                correctOption: 1,
+                answerType: "multiple-choice"
               }
             ]
           },

@@ -86,6 +86,13 @@ export interface Task {
   videoUrl?: string;
   questions?: QuizQuestion[];
   moduleId?: string;
+  
+  // Additional fields needed for the TasksPage
+  course?: string;
+  answer?: string;
+  submittedAt?: Date;
+  createdAt?: Date;
+  generatedBy?: string;
 }
 
 export interface StudentChat {
@@ -123,4 +130,3 @@ export interface UserSetting {
   value?: string;
   category: "appearance" | "notifications" | "privacy" | "account";
 }
-

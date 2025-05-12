@@ -1,11 +1,10 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Clock, Loader2, X, FileText, FilePdf } from "lucide-react";
+import { Check, Clock, Loader2, X, FileText } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -403,7 +402,9 @@ const TasksPage = () => {
       
       // Add course name
       pdf.setFontSize(12);
-      pdf.text(`Kurs: ${activeTask.course}`, 20, 30);
+      if (activeTask.course) {
+        pdf.text(`Kurs: ${activeTask.course}`, 20, 30);
+      }
       
       // Add date if available
       if (activeTask.dueDate) {
@@ -616,7 +617,7 @@ const TasksPage = () => {
                   </>
                 ) : (
                   <>
-                    <FilePdf className="mr-2 h-4 w-4" />
+                    <FileText className="mr-2 h-4 w-4" />
                     Als PDF exportieren
                   </>
                 )}
