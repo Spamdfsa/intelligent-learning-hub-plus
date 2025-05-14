@@ -23,10 +23,10 @@ const CourseCard = ({ course, showProgress = true, className, ...props }: Course
           {course.description}
         </p>
         <div className="flex items-center text-sm text-muted-foreground pt-2">
-          <span>Dozent: {course.instructor}</span>
+          <span>Dozent: {course.instructor || course.instructor_name || "Keine Angabe"}</span>
         </div>
         <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
-          <span>{course.level}</span>
+          <span>{course.level || "Alle Niveaus"}</span>
           <span>{course.duration || "Keine Angabe"}</span>
         </div>
         {course.progress !== undefined && showProgress && (
@@ -43,7 +43,7 @@ const CourseCard = ({ course, showProgress = true, className, ...props }: Course
           <Button variant="secondary" size="sm">Zum Kurs</Button>
         </Link>
         <div className="flex items-center text-xs text-muted-foreground">
-          <span>{course.enrolledStudents || course.enrolled || 0} Teilnehmer</span>
+          <span>{course.enrolledStudents || course.enrolled || course.student_count || 0} Teilnehmer</span>
         </div>
       </div>
     </div>

@@ -30,6 +30,7 @@ export interface Course {
   instructor_id: string;
   instructorId?: string;
   instructor_name?: string;
+  instructor?: string; // Added
   created_at: string;
   image_url?: string;
   modules?: Module[];
@@ -40,6 +41,13 @@ export interface Course {
   students?: string[];
   student_count?: number;
   rating?: number;
+  // Additional properties used in components
+  level?: string;
+  duration?: string;
+  progress?: number;
+  enrolledStudents?: number;
+  enrolled?: number;
+  bannerColor?: string;
 }
 
 export interface Module {
@@ -49,6 +57,7 @@ export interface Module {
   course_id: string;
   order: number;
   materials?: Material[];
+  tasks?: Task[]; // Added for modules
 }
 
 export interface Material {
@@ -70,9 +79,12 @@ export interface Task {
   title: string;
   description: string;
   course: string;
+  course_id?: string; // Added
+  courseId?: string; // Added
   dueDate: string;
+  due_date?: string; // Added for compatibility
   status: "pending" | "submitted" | "graded";
-  type: "quiz" | "assignment" | "summary";
+  type: "quiz" | "assignment" | "summary" | "reading" | "video"; // Added reading and video
   createdAt: Date;
   submittedAt?: Date;
   generatedBy?: string;
@@ -80,6 +92,11 @@ export interface Task {
   feedback?: string;
   grade?: string;
   questions?: QuizQuestion[];
+  // Additional properties
+  completed?: boolean;
+  content?: string;
+  videoUrl?: string;
+  submission?: string;
 }
 
 export interface QuizQuestion {
