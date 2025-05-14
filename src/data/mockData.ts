@@ -7,6 +7,8 @@ export const mockCourses: Course[] = [
     description: "Ein umfassender Kurs, der die Grundlagen der Informatik und Programmierung abdeckt.",
     instructor: "Prof. Dr. Schmidt",
     instructorId: "1",
+    instructor_id: "1", // Adding this to match the interface
+    created_at: "2024-01-01", // Adding this to match the interface
     bannerColor: "blue",
     enrolledStudents: 128,
     progress: 75,
@@ -18,6 +20,8 @@ export const mockCourses: Course[] = [
         id: "module-1-1",
         title: "Einführung in Algorithmen",
         description: "Grundlegende Konzepte der Algorithmen und Problemlösung.",
+        course_id: "course-1", // Adding this to match the interface
+        order: 1, // Adding this to match the interface
         tasks: [
           {
             id: "task-1-1-1",
@@ -25,6 +29,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: true,
             description: "Algorithmen sind Schritt-für-Schritt-Anweisungen zur Lösung eines Problems. Sie bestehen aus einer endlichen Folge von wohldefinierten Anweisungen und bilden die Grundlage der Informatik. In dieser Lektion lernen Sie die grundlegenden Konzepte von Algorithmen und wie sie unser tägliches Leben beeinflussen.",
+            course: "course-1", // Adding course reference
+            status: "graded", // Adding default status
+            dueDate: "2025-04-15", // Adding default dueDate
+            createdAt: new Date("2024-03-01"), // Adding default createdAt
           },
           {
             id: "task-1-1-2",
@@ -32,6 +40,10 @@ export const mockCourses: Course[] = [
             type: "video",
             completed: true,
             description: "Dieses Video zeigt, wie Algorithmen in alltäglichen Situationen Anwendung finden - von Navigationsapps bis hin zu Social-Media-Feeds.",
+            course: "course-1", // Adding course reference
+            status: "graded", // Adding default status
+            dueDate: "2025-04-18", // Adding default dueDate
+            createdAt: new Date("2024-03-02"), // Adding default createdAt
           },
           {
             id: "task-1-1-3",
@@ -39,6 +51,10 @@ export const mockCourses: Course[] = [
             type: "quiz",
             completed: true,
             description: "Testen Sie Ihr Verständnis der grundlegenden Algorithmenkonzepte mit diesem Quiz.",
+            course: "course-1", // Adding course reference
+            status: "graded", // Adding default status
+            dueDate: "2025-04-20", // Adding default dueDate
+            createdAt: new Date("2024-03-05"), // Adding default createdAt
             questions: [
               {
                 id: "q-1-1-3-1",
@@ -73,6 +89,9 @@ export const mockCourses: Course[] = [
             completed: false,
             dueDate: "2025-05-20",
             description: "Implementieren Sie die folgenden Algorithmen in einer Programmiersprache Ihrer Wahl: Lineares Suchen, Binäres Suchen, Bubble Sort.",
+            course: "course-1", // Adding course reference
+            status: "pending", // Adding default status
+            createdAt: new Date("2024-03-10"), // Adding default createdAt
           },
         ],
       },
@@ -80,6 +99,8 @@ export const mockCourses: Course[] = [
         id: "module-1-2",
         title: "Datenstrukturen",
         description: "Einführung in grundlegende Datenstrukturen und deren Anwendungen.",
+        course_id: "course-1", // Adding this to match the interface
+        order: 2, // Adding this to match the interface
         tasks: [
           {
             id: "task-1-2-1",
@@ -87,6 +108,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: true,
             description: "Arrays und Listen sind fundamentale Datenstrukturen, die eine Sammlung von Elementen speichern. Dieser Artikel beschreibt ihre Eigenschaften, Unterschiede und typische Anwendungsfälle.",
+            course: "course-1", // Adding course reference
+            status: "graded", // Adding default status
+            dueDate: "2025-04-25", // Adding default dueDate
+            createdAt: new Date("2024-03-15"), // Adding default createdAt
           },
           {
             id: "task-1-2-2",
@@ -94,6 +119,10 @@ export const mockCourses: Course[] = [
             type: "video",
             completed: false,
             description: "Dieses Video erklärt, wie verschiedene Datenstrukturen in realen Szenarien eingesetzt werden und welche Vor- und Nachteile sie bieten.",
+            course: "course-1", // Adding course reference
+            status: "pending", // Adding default status
+            dueDate: "2025-04-28", // Adding default dueDate
+            createdAt: new Date("2024-03-18"), // Adding default createdAt
           },
           {
             id: "task-1-2-3",
@@ -101,6 +130,10 @@ export const mockCourses: Course[] = [
             type: "quiz",
             completed: false,
             description: "Überprüfen Sie Ihr Wissen zu den verschiedenen Datenstrukturen mit diesem Quiz.",
+            course: "course-1", // Adding course reference
+            status: "pending", // Adding default status
+            dueDate: "2025-05-02", // Adding default dueDate
+            createdAt: new Date("2024-03-20"), // Adding default createdAt
             questions: [
               {
                 id: "q-1-2-3-1",
@@ -138,6 +171,8 @@ export const mockCourses: Course[] = [
     description: "Erlernen Sie die Grundlagen von Datenbanksystemen und SQL.",
     instructor: "Dr. Müller",
     instructorId: "2",
+    instructor_id: "2", // Adding this to match the interface
+    created_at: "2024-01-15", // Adding this to match the interface
     bannerColor: "green",
     enrolledStudents: 95,
     progress: 35,
@@ -149,6 +184,8 @@ export const mockCourses: Course[] = [
         id: "module-2-1",
         title: "Grundlagen relationaler Datenbanken",
         description: "Einführung in die Konzepte relationaler Datenbanken.",
+        course_id: "course-2", // Adding this to match the interface
+        order: 1, // Adding this to match the interface
         tasks: [
           {
             id: "task-2-1-1",
@@ -156,6 +193,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: true,
             description: "Das relationale Modell ist ein Ansatz zur Verwaltung von Daten mit Beziehungen. Diese Lektion erklärt die Grundprinzipien, Tabellen, Beziehungen und die Bedeutung von Schlüsseln.",
+            course: "course-2", // Adding course reference
+            status: "graded", // Adding default status
+            dueDate: "2025-05-05", // Adding default dueDate
+            createdAt: new Date("2024-03-25"), // Adding default createdAt
           },
           {
             id: "task-2-1-2",
@@ -163,6 +204,10 @@ export const mockCourses: Course[] = [
             type: "video",
             completed: true,
             description: "Dieses Video erklärt Entity-Relationship-Modelle (ER-Modelle) und wie sie zur Planung von Datenbankstrukturen verwendet werden.",
+            course: "course-2", // Adding course reference
+            status: "graded", // Adding default status
+            dueDate: "2025-05-08", // Adding default dueDate
+            createdAt: new Date("2024-03-28"), // Adding default createdAt
           },
           {
             id: "task-2-1-3",
@@ -170,6 +215,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: false,
             description: "Normalisierung ist ein Prozess zur Organisation von Daten in Datenbanken, um Redundanz zu reduzieren und die Datenkonsistenz zu verbessern. In dieser Lektion werden die Normalformen 1NF bis 3NF erklärt.",
+            course: "course-2", // Adding course reference
+            status: "pending", // Adding default status
+            dueDate: "2025-05-12", // Adding default dueDate
+            createdAt: new Date("2024-04-01"), // Adding default createdAt
           },
           {
             id: "task-2-1-4",
@@ -177,6 +226,10 @@ export const mockCourses: Course[] = [
             type: "quiz",
             completed: false,
             description: "Überprüfen Sie Ihr Verständnis der grundlegenden Konzepte relationaler Datenbanken.",
+            course: "course-2", // Adding course reference
+            status: "pending", // Adding default status
+            dueDate: "2025-05-15", // Adding default dueDate
+            createdAt: new Date("2024-04-05"), // Adding default createdAt
             questions: [
               {
                 id: "q-2-1-4-1",
@@ -210,6 +263,8 @@ export const mockCourses: Course[] = [
         id: "module-2-2",
         title: "SQL Grundlagen",
         description: "Einführung in die SQL-Abfragesprache.",
+        course_id: "course-2", // Adding this to match the interface
+        order: 2, // Adding this to match the interface
         tasks: [
           {
             id: "task-2-2-1",
@@ -217,6 +272,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: false,
             description: "SELECT-Anweisungen sind der Grundbaustein für das Abrufen von Daten aus SQL-Datenbanken. Diese Lektion erklärt die Syntax und verschiedene Optionen für Datenabfragen.",
+            course: "course-2", // Adding course reference
+            status: "pending", // Adding default status
+            dueDate: "2025-05-18", // Adding default dueDate
+            createdAt: new Date("2024-04-10"), // Adding default createdAt
           },
           {
             id: "task-2-2-2",
@@ -225,6 +284,9 @@ export const mockCourses: Course[] = [
             completed: false,
             dueDate: "2025-05-25",
             description: "Führen Sie die folgenden SQL-Abfragen aus und interpretieren Sie die Ergebnisse. Die Übungen umfassen SELECT, WHERE, JOIN und GROUP BY-Anweisungen.",
+            course: "course-2", // Adding course reference
+            status: "pending", // Adding default status
+            createdAt: new Date("2024-04-15"), // Adding default createdAt
           },
           {
             id: "task-2-2-3",
@@ -232,6 +294,10 @@ export const mockCourses: Course[] = [
             type: "video",
             completed: false,
             description: "Dieses Video zeigt Techniken zur Optimierung von SQL-Abfragen für bessere Performance, einschließlich Index-Nutzung und Query-Planung.",
+            course: "course-2", // Adding course reference
+            status: "pending", // Adding default status
+            dueDate: "2025-05-28", // Adding default dueDate
+            createdAt: new Date("2024-04-18"), // Adding default createdAt
           },
         ],
       },
@@ -243,6 +309,8 @@ export const mockCourses: Course[] = [
     description: "Einführung in maschinelles Lernen und künstliche Intelligenz.",
     instructor: "Prof. Dr. Becker",
     instructorId: "3",
+    instructor_id: "3", // Adding this
+    created_at: "2024-01-30", // Adding this
     bannerColor: "purple",
     enrolledStudents: 210,
     progress: 15,
@@ -254,6 +322,8 @@ export const mockCourses: Course[] = [
         id: "module-3-1",
         title: "Einführung in Machine Learning",
         description: "Grundlegende Konzepte des maschinellen Lernens.",
+        course_id: "course-3", // Adding this
+        order: 1, // Adding this
         tasks: [
           {
             id: "task-3-1-1",
@@ -261,6 +331,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: true,
             description: "Maschinelles Lernen ist ein Teilbereich der künstlichen Intelligenz, bei dem Systeme aus Daten lernen, ohne explizit programmiert zu werden. Diese Lektion gibt einen Überblick über die Geschichte, Anwendungen und grundlegenden Konzepte.",
+            course: "course-3", // Adding these required fields to satisfy TypeScript
+            status: "graded",
+            dueDate: "2025-05-05",
+            createdAt: new Date("2024-03-01"),
           },
           {
             id: "task-3-1-2",
@@ -268,6 +342,10 @@ export const mockCourses: Course[] = [
             type: "video",
             completed: false,
             description: "Dieses Video erklärt die Unterschiede zwischen den beiden Hauptkategorien des maschinellen Lernens: überwachtes und unüberwachtes Lernen, sowie deren typische Anwendungen.",
+            course: "course-3", // Adding course reference
+            status: "pending",
+            dueDate: "2025-05-08",
+            createdAt: new Date("2024-03-04"),
           },
           {
             id: "task-3-1-3",
@@ -275,6 +353,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: false,
             description: "Die Qualität der Daten ist entscheidend für den Erfolg von Machine Learning-Modellen. Diese Lektion behandelt Techniken zur Datenreinigung, -transformation und -normalisierung.",
+            course: "course-3", // Adding course reference
+            status: "pending",
+            dueDate: "2025-05-12",
+            createdAt: new Date("2024-03-07"),
           },
           {
             id: "task-3-1-4",
@@ -282,6 +364,10 @@ export const mockCourses: Course[] = [
             type: "quiz",
             completed: false,
             description: "Überprüfen Sie Ihr Verständnis der Machine Learning-Grundlagen.",
+            course: "course-3", // Adding course reference
+            status: "pending",
+            dueDate: "2025-05-15",
+            createdAt: new Date("2024-03-10"),
             questions: [
               {
                 id: "q-3-1-4-1",
@@ -348,6 +434,8 @@ export const mockCourses: Course[] = [
     description: "Lernen Sie moderne Webentwicklung mit HTML, CSS und JavaScript.",
     instructor: "Sarah Wagner",
     instructorId: "4",
+    instructor_id: "4", // Adding this to match the interface
+    created_at: "2024-01-20", // Adding this to match the interface
     bannerColor: "orange",
     enrolledStudents: 175,
     progress: 50,
@@ -366,6 +454,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: true,
             description: "HTML ist die Grundsprache des Webs. Diese Lektion behandelt grundlegende Tags, Dokumentstruktur und semantisches HTML5.",
+            course: "course-4", // Adding course reference
+            status: "graded",
+            dueDate: "2025-04-15",
+            createdAt: new Date("2024-03-01"),
           },
           {
             id: "task-4-1-2",
@@ -373,6 +465,10 @@ export const mockCourses: Course[] = [
             type: "video",
             completed: true,
             description: "Dieses Video zeigt, wie CSS verwendet wird, um Webseiten zu gestalten, einschließlich Selektoren, Box-Modell und Responsive Design.",
+            course: "course-4", // Adding course reference
+            status: "graded",
+            dueDate: "2025-04-18",
+            createdAt: new Date("2024-03-02"),
           },
           {
             id: "task-4-1-3",
@@ -380,6 +476,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: false,
             description: "Moderne CSS-Layout-Techniken mit Flexbox und CSS Grid für responsive und komplexe Layouts.",
+            course: "course-4", // Adding course reference
+            status: "pending",
+            dueDate: "2025-04-25",
+            createdAt: new Date("2024-03-05"),
           },
           {
             id: "task-4-1-4",
@@ -388,6 +488,9 @@ export const mockCourses: Course[] = [
             completed: false,
             dueDate: "2025-05-15",
             description: "Erstellen Sie eine persönliche Portfolio-Webseite mit HTML und CSS unter Verwendung von Flexbox oder Grid für das Layout.",
+            course: "course-4", // Adding course reference
+            status: "pending",
+            createdAt: new Date("2024-03-10"),
           },
         ],
       },
@@ -402,6 +505,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: false,
             description: "Diese Lektion führt in die grundlegende Syntax von JavaScript ein, einschließlich Variablen, Datentypen, Funktionen und Kontrollstrukturen.",
+            course: "course-4", // Adding course reference
+            status: "pending",
+            dueDate: "2025-04-25",
+            createdAt: new Date("2024-03-15"),
           },
           {
             id: "task-4-2-2",
@@ -409,6 +516,10 @@ export const mockCourses: Course[] = [
             type: "video",
             completed: false,
             description: "Dieses Video erklärt, wie JavaScript verwendet wird, um HTML-Elemente dynamisch zu ändern, zu erstellen und zu entfernen.",
+            course: "course-4", // Adding course reference
+            status: "pending",
+            dueDate: "2025-04-28",
+            createdAt: new Date("2024-03-18"),
           },
           {
             id: "task-4-2-3",
@@ -416,6 +527,10 @@ export const mockCourses: Course[] = [
             type: "quiz",
             completed: false,
             description: "Testen Sie Ihre JavaScript-Kenntnisse mit diesem Quiz.",
+            course: "course-4", // Adding course reference
+            status: "pending",
+            dueDate: "2025-05-02",
+            createdAt: new Date("2024-03-20"),
             questions: [
               {
                 id: "q-4-2-3-1",
@@ -449,10 +564,12 @@ export const mockCourses: Course[] = [
   },
   {
     id: "course-5",
-    title: "Fortgeschrittene Programmierung",
+    title: "Fortgeschrittende Programmierung",
     description: "Vertiefen Sie Ihre Programmierkenntnisse mit fortgeschrittenen Konzepten.",
     instructor: "Dr. Fischer",
     instructorId: "5",
+    instructor_id: "5", // Adding this to match the interface
+    created_at: "2024-01-25", // Adding this to match the interface
     bannerColor: "red",
     enrolledStudents: 63,
     category: "Programmierung",
@@ -510,6 +627,8 @@ export const mockCourses: Course[] = [
     description: "Lernen Sie die Grundlagen der IT-Sicherheit und schützen Sie sich vor Cyberbedrohungen.",
     instructor: "Prof. Dr. Hoffmann",
     instructorId: "6",
+    instructor_id: "6", // Adding this to match the interface
+    created_at: "2024-01-30", // Adding this to match the interface
     bannerColor: "blue",
     enrolledStudents: 89,
     category: "Sicherheit",
@@ -527,6 +646,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: false,
             description: "Diese Lektion behandelt verschiedene Arten von Cyberbedrohungen, Angriffsvektoren und wie man Risiken einschätzt.",
+            course: "course-6", // Adding course reference
+            status: "graded",
+            dueDate: "2025-04-15",
+            createdAt: new Date("2024-03-01"),
           },
           {
             id: "task-6-1-2",
@@ -534,6 +657,10 @@ export const mockCourses: Course[] = [
             type: "video",
             completed: false,
             description: "Ein Überblick über Verschlüsselungsmethoden, Hash-Funktionen und ihre Rolle in der IT-Sicherheit.",
+            course: "course-6", // Adding course reference
+            status: "graded",
+            dueDate: "2025-04-18",
+            createdAt: new Date("2024-03-02"),
           }
         ]
       },
@@ -548,6 +675,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: false,
             description: "Diese Lektion erklärt die Funktionsweise von Firewalls und Intrusion Detection Systemen zum Schutz von Netzwerken.",
+            course: "course-6", // Adding course reference
+            status: "pending",
+            dueDate: "2025-04-25",
+            createdAt: new Date("2024-03-05"),
           },
           {
             id: "task-6-2-2",
@@ -556,6 +687,9 @@ export const mockCourses: Course[] = [
             completed: false,
             dueDate: "2025-06-05",
             description: "Führen Sie einen einfachen Penetrationstest auf einem kontrollierten Netzwerk durch und dokumentieren Sie Ihre Ergebnisse.",
+            course: "course-6", // Adding course reference
+            status: "pending",
+            createdAt: new Date("2024-03-10"),
           }
         ]
       }
@@ -567,6 +701,8 @@ export const mockCourses: Course[] = [
     description: "Einführung in Cloud-Technologien und deren Implementierung.",
     instructor: "Dr. Schneider",
     instructorId: "7",
+    instructor_id: "7", // Adding this to match the interface
+    created_at: "2024-01-35", // Adding this to match the interface
     bannerColor: "green",
     enrolledStudents: 124,
     category: "IT-Infrastruktur",
@@ -577,6 +713,8 @@ export const mockCourses: Course[] = [
         id: "module-7-1",
         title: "Cloud-Grundlagen",
         description: "Einführung in Cloud-Computing-Konzepte und -Dienste.",
+        course_id: "course-7", // Adding this to match the interface
+        order: 1, // Adding this to match the interface
         tasks: [
           {
             id: "task-7-1-1",
@@ -584,6 +722,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: false,
             description: "Diese Lektion erklärt die verschiedenen Cloud-Servicemodelle (IaaS, PaaS, SaaS) und ihre jeweiligen Anwendungsfälle.",
+            course: "course-7", // Adding course reference
+            status: "graded",
+            dueDate: "2025-05-05",
+            createdAt: new Date("2024-03-25"),
           },
           {
             id: "task-7-1-2",
@@ -591,6 +733,10 @@ export const mockCourses: Course[] = [
             type: "video",
             completed: false,
             description: "Ein Überblick über die führenden Cloud-Anbieter wie AWS, Azure und Google Cloud, ihre Stärken und Unterschiede.",
+            course: "course-7", // Adding course reference
+            status: "graded",
+            dueDate: "2025-05-08",
+            createdAt: new Date("2024-03-28"),
           }
         ]
       },
@@ -598,6 +744,8 @@ export const mockCourses: Course[] = [
         id: "module-7-2",
         title: "Serverless Computing",
         description: "Entwicklung von Anwendungen ohne Serveradministration.",
+        course_id: "course-7", // Adding this to match the interface
+        order: 2, // Adding this to match the interface
         tasks: [
           {
             id: "task-7-2-1",
@@ -605,6 +753,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: false,
             description: "Diese Lektion behandelt die Grundlagen von Serverless-Architekturen und ihre Vor- und Nachteile gegenüber traditionellen Ansätzen.",
+            course: "course-7", // Adding course reference
+            status: "pending",
+            dueDate: "2025-05-12",
+            createdAt: new Date("2024-04-01"),
           },
           {
             id: "task-7-2-2",
@@ -613,6 +765,9 @@ export const mockCourses: Course[] = [
             completed: false,
             dueDate: "2025-06-10",
             description: "Erstellen und implementieren Sie eine einfache Serverless-Funktion auf AWS Lambda oder einer ähnlichen Plattform.",
+            course: "course-7", // Adding course reference
+            status: "pending",
+            createdAt: new Date("2024-04-10"),
           }
         ]
       }
@@ -624,6 +779,8 @@ export const mockCourses: Course[] = [
     description: "Praktische Anwendungen von KI-Technologien in verschiedenen Branchen.",
     instructor: "Prof. Dr. Becker",
     instructorId: "3",
+    instructor_id: "3", // Adding this to match the interface
+    created_at: "2024-01-40", // Adding this to match the interface
     bannerColor: "purple",
     enrolledStudents: 157,
     category: "Künstliche Intelligenz",
@@ -641,6 +798,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: false,
             description: "Diese Lektion führt in die Grundkonzepte des Natural Language Processing ein, einschließlich Tokenisierung, POS-Tagging und Named Entity Recognition.",
+            course: "course-8", // Adding course reference
+            status: "graded",
+            dueDate: "2025-04-15",
+            createdAt: new Date("2024-03-01"),
           },
           {
             id: "task-8-1-2",
@@ -648,6 +809,10 @@ export const mockCourses: Course[] = [
             type: "video",
             completed: false,
             description: "Ein Überblick über moderne Transformer-basierte Modelle wie BERT, GPT und ihre Anwendungen.",
+            course: "course-8", // Adding course reference
+            status: "graded",
+            dueDate: "2025-04-18",
+            createdAt: new Date("2024-03-02"),
           }
         ]
       },
@@ -662,6 +827,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: false,
             description: "Diese Lektion behandelt grundlegende Techniken der digitalen Bildverarbeitung und wie sie in Computer Vision angewendet werden.",
+            course: "course-8", // Adding course reference
+            status: "pending",
+            dueDate: "2025-04-25",
+            createdAt: new Date("2024-03-05"),
           },
           {
             id: "task-8-2-2",
@@ -669,6 +838,10 @@ export const mockCourses: Course[] = [
             type: "video",
             completed: false,
             description: "Eine Einführung in CNNs und ihre Architektur für Bilderkennungsaufgaben.",
+            course: "course-8", // Adding course reference
+            status: "pending",
+            dueDate: "2025-04-28",
+            createdAt: new Date("2024-03-08"),
           },
           {
             id: "task-8-2-3",
@@ -677,6 +850,9 @@ export const mockCourses: Course[] = [
             completed: false,
             dueDate: "2025-06-15",
             description: "Implementieren Sie ein einfaches Objekterkennungssystem mit einem vortrainierten Modell wie YOLO oder SSD.",
+            course: "course-8", // Adding course reference
+            status: "pending",
+            createdAt: new Date("2024-03-15"),
           }
         ]
       }

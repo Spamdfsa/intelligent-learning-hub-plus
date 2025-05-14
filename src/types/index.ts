@@ -78,14 +78,14 @@ export interface Task {
   id: string;
   title: string;
   description: string;
-  course: string;
+  course?: string; // Make optional to match mock data
   course_id?: string; // Added
   courseId?: string; // Added
-  dueDate: string;
+  dueDate?: string; // Make optional to match mock data
   due_date?: string; // Added for compatibility
-  status: "pending" | "submitted" | "graded";
+  status?: "pending" | "submitted" | "graded"; // Make optional to match mock data
   type: "quiz" | "assignment" | "summary" | "reading" | "video"; // Added reading and video
-  createdAt: Date;
+  createdAt?: Date; // Make optional to match mock data
   submittedAt?: Date;
   generatedBy?: string;
   answer?: string;
