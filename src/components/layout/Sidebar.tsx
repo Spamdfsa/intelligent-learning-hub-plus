@@ -14,10 +14,7 @@ import {
   MessageSquare, 
   Settings,
   User as UserIcon,
-  Users,
-  Edit,
-  FilePlus,
-  FileSymlink
+  Users
 } from "lucide-react";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -42,32 +39,10 @@ export function Sidebar({ className, ...props }: SidebarProps) {
     { title: "Einstellungen", href: "/settings", icon: <Settings className="h-5 w-5" /> },
   ];
 
-  const lecturerNavItems = [
-    { title: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
-    { title: "Meine Kurse", href: "/courses/teaching", icon: <BookOpen className="h-5 w-5" /> },
-    { title: "Kurs erstellen", href: "/courses/create", icon: <Edit className="h-5 w-5" /> },
-    { title: "Materialien", href: "/materials", icon: <FileSymlink className="h-5 w-5" /> },
-    { title: "Material hinzufügen", href: "/materials/create", icon: <FilePlus className="h-5 w-5" /> },
-    { title: "Aufgabenbewertung", href: "/assignments", icon: <BookCheck className="h-5 w-5" /> },
-    { title: "Kursteilnehmer", href: "/students", icon: <GraduationCap className="h-5 w-5" /> },
-    { title: "Studentenchats", href: "/student-chats", icon: <MessageSquare className="h-5 w-5" /> },
-    { title: "Profil", href: "/profile", icon: <UserIcon className="h-5 w-5" /> },
-    { title: "Einstellungen", href: "/settings", icon: <Settings className="h-5 w-5" /> },
-  ];
-
-  const teacherNavItems = [
-    { title: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
-    { title: "Meine Kurse", href: "/courses/teaching", icon: <BookOpen className="h-5 w-5" /> },
-    { title: "Materialien", href: "/materials", icon: <FileSymlink className="h-5 w-5" /> },
-    { title: "Aufgabenbewertung", href: "/assignments", icon: <BookCheck className="h-5 w-5" /> },
-    { title: "Kursteilnehmer", href: "/students", icon: <GraduationCap className="h-5 w-5" /> },
-    { title: "Einstellungen", href: "/settings", icon: <Settings className="h-5 w-5" /> },
-  ];
-
   const studentNavItems = [
     { title: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
     { title: "Meine Kurse", href: "/courses", icon: <BookOpen className="h-5 w-5" /> },
-    { title: "Materialien", href: "/materials", icon: <FileSymlink className="h-5 w-5" /> },
+    { title: "Materialien", href: "/materials", icon: <FileText className="h-5 w-5" /> },
     { title: "Aufgaben", href: "/tasks", icon: <BookCheck className="h-5 w-5" /> },
     { title: "Deadlines", href: "/deadlines", icon: <Calendar className="h-5 w-5" /> },
     { title: "Lernfortschritt", href: "/progress", icon: <BarChart className="h-5 w-5" /> },
@@ -78,14 +53,10 @@ export function Sidebar({ className, ...props }: SidebarProps) {
     { title: "Einstellungen", href: "/settings", icon: <Settings className="h-5 w-5" /> },
   ];
 
-  // Select navigation items based on user role
+  // Select navigation items based on user role - removed lecturer and teacher roles
   const navItems = userRole === "admin" 
     ? adminNavItems 
-    : userRole === "lecturer"
-      ? lecturerNavItems
-      : userRole === "teacher" 
-        ? teacherNavItems 
-        : studentNavItems;
+    : studentNavItems;
 
   return (
     <aside className={cn("pb-12 w-64 border-r h-screen flex flex-col", className)} {...props}>
