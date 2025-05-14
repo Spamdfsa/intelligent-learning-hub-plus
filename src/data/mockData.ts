@@ -1,5 +1,16 @@
 import { Course } from "@/types";
 
+// Helper function to ensure all modules have the required properties
+const ensureModuleProperties = (modules: any[], courseId: string) => {
+  return modules.map((module, index) => {
+    return {
+      ...module,
+      course_id: module.course_id || courseId,
+      order: module.order !== undefined ? module.order : index + 1
+    };
+  });
+};
+
 export const mockCourses: Course[] = [
   {
     id: "course-1",
@@ -15,13 +26,13 @@ export const mockCourses: Course[] = [
     category: "Informatik",
     level: "Beginner",
     duration: "8 Wochen",
-    modules: [
+    modules: ensureModuleProperties([
       {
         id: "module-1-1",
         title: "Einführung in Algorithmen",
         description: "Grundlegende Konzepte der Algorithmen und Problemlösung.",
-        course_id: "course-1", // Adding this to match the interface
-        order: 1, // Adding this to match the interface
+        course_id: "course-1", // Already has this property
+        order: 1, // Already has this property
         tasks: [
           {
             id: "task-1-1-1",
@@ -99,8 +110,8 @@ export const mockCourses: Course[] = [
         id: "module-1-2",
         title: "Datenstrukturen",
         description: "Einführung in grundlegende Datenstrukturen und deren Anwendungen.",
-        course_id: "course-1", // Adding this to match the interface
-        order: 2, // Adding this to match the interface
+        course_id: "course-1", // Already has this property
+        order: 2, // Already has this property
         tasks: [
           {
             id: "task-1-2-1",
@@ -163,7 +174,7 @@ export const mockCourses: Course[] = [
           },
         ],
       },
-    ],
+    ], "course-1"),
   },
   {
     id: "course-2",
@@ -179,13 +190,11 @@ export const mockCourses: Course[] = [
     category: "Datenbanken",
     level: "Intermediate",
     duration: "10 Wochen",
-    modules: [
+    modules: ensureModuleProperties([
       {
         id: "module-2-1",
         title: "Grundlagen relationaler Datenbanken",
         description: "Einführung in die Konzepte relationaler Datenbanken.",
-        course_id: "course-2", // Adding this to match the interface
-        order: 1, // Adding this to match the interface
         tasks: [
           {
             id: "task-2-1-1",
@@ -193,10 +202,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: true,
             description: "Das relationale Modell ist ein Ansatz zur Verwaltung von Daten mit Beziehungen. Diese Lektion erklärt die Grundprinzipien, Tabellen, Beziehungen und die Bedeutung von Schlüsseln.",
-            course: "course-2", // Adding course reference
-            status: "graded", // Adding default status
-            dueDate: "2025-05-05", // Adding default dueDate
-            createdAt: new Date("2024-03-25"), // Adding default createdAt
+            course: "course-2",
+            status: "graded",
+            dueDate: "2025-05-05",
+            createdAt: new Date("2024-03-25"),
           },
           {
             id: "task-2-1-2",
@@ -204,10 +213,10 @@ export const mockCourses: Course[] = [
             type: "video",
             completed: true,
             description: "Dieses Video erklärt Entity-Relationship-Modelle (ER-Modelle) und wie sie zur Planung von Datenbankstrukturen verwendet werden.",
-            course: "course-2", // Adding course reference
-            status: "graded", // Adding default status
-            dueDate: "2025-05-08", // Adding default dueDate
-            createdAt: new Date("2024-03-28"), // Adding default createdAt
+            course: "course-2",
+            status: "graded",
+            dueDate: "2025-05-08",
+            createdAt: new Date("2024-03-28"),
           },
           {
             id: "task-2-1-3",
@@ -215,10 +224,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: false,
             description: "Normalisierung ist ein Prozess zur Organisation von Daten in Datenbanken, um Redundanz zu reduzieren und die Datenkonsistenz zu verbessern. In dieser Lektion werden die Normalformen 1NF bis 3NF erklärt.",
-            course: "course-2", // Adding course reference
-            status: "pending", // Adding default status
-            dueDate: "2025-05-12", // Adding default dueDate
-            createdAt: new Date("2024-04-01"), // Adding default createdAt
+            course: "course-2",
+            status: "pending",
+            dueDate: "2025-05-12",
+            createdAt: new Date("2024-04-01"),
           },
           {
             id: "task-2-1-4",
@@ -226,10 +235,10 @@ export const mockCourses: Course[] = [
             type: "quiz",
             completed: false,
             description: "Überprüfen Sie Ihr Verständnis der grundlegenden Konzepte relationaler Datenbanken.",
-            course: "course-2", // Adding course reference
-            status: "pending", // Adding default status
-            dueDate: "2025-05-15", // Adding default dueDate
-            createdAt: new Date("2024-04-05"), // Adding default createdAt
+            course: "course-2",
+            status: "pending",
+            dueDate: "2025-05-15",
+            createdAt: new Date("2024-04-05"),
             questions: [
               {
                 id: "q-2-1-4-1",
@@ -263,8 +272,6 @@ export const mockCourses: Course[] = [
         id: "module-2-2",
         title: "SQL Grundlagen",
         description: "Einführung in die SQL-Abfragesprache.",
-        course_id: "course-2", // Adding this to match the interface
-        order: 2, // Adding this to match the interface
         tasks: [
           {
             id: "task-2-2-1",
@@ -272,10 +279,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: false,
             description: "SELECT-Anweisungen sind der Grundbaustein für das Abrufen von Daten aus SQL-Datenbanken. Diese Lektion erklärt die Syntax und verschiedene Optionen für Datenabfragen.",
-            course: "course-2", // Adding course reference
-            status: "pending", // Adding default status
-            dueDate: "2025-05-18", // Adding default dueDate
-            createdAt: new Date("2024-04-10"), // Adding default createdAt
+            course: "course-2",
+            status: "pending",
+            dueDate: "2025-05-18",
+            createdAt: new Date("2024-04-10"),
           },
           {
             id: "task-2-2-2",
@@ -284,9 +291,9 @@ export const mockCourses: Course[] = [
             completed: false,
             dueDate: "2025-05-25",
             description: "Führen Sie die folgenden SQL-Abfragen aus und interpretieren Sie die Ergebnisse. Die Übungen umfassen SELECT, WHERE, JOIN und GROUP BY-Anweisungen.",
-            course: "course-2", // Adding course reference
-            status: "pending", // Adding default status
-            createdAt: new Date("2024-04-15"), // Adding default createdAt
+            course: "course-2",
+            status: "pending",
+            createdAt: new Date("2024-04-15"),
           },
           {
             id: "task-2-2-3",
@@ -294,14 +301,14 @@ export const mockCourses: Course[] = [
             type: "video",
             completed: false,
             description: "Dieses Video zeigt Techniken zur Optimierung von SQL-Abfragen für bessere Performance, einschließlich Index-Nutzung und Query-Planung.",
-            course: "course-2", // Adding course reference
-            status: "pending", // Adding default status
-            dueDate: "2025-05-28", // Adding default dueDate
-            createdAt: new Date("2024-04-18"), // Adding default createdAt
-          },
+            course: "course-2",
+            status: "pending",
+            dueDate: "2025-05-28",
+            createdAt: new Date("2024-04-18"),
+          }
         ],
       },
-    ],
+    ], "course-2"),
   },
   {
     id: "course-3",
@@ -317,13 +324,11 @@ export const mockCourses: Course[] = [
     category: "Künstliche Intelligenz",
     level: "Intermediate",
     duration: "12 Wochen",
-    modules: [
+    modules: ensureModuleProperties([
       {
         id: "module-3-1",
         title: "Einführung in Machine Learning",
         description: "Grundlegende Konzepte des maschinellen Lernens.",
-        course_id: "course-3", // Adding this
-        order: 1, // Adding this
         tasks: [
           {
             id: "task-3-1-1",
@@ -408,6 +413,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: false,
             description: "Diese Lektion erklärt die Struktur neuronaler Netze, einschließlich Neuronen, Schichten, Aktivierungsfunktionen und Backpropagation.",
+            course: "course-3",
+            status: "pending",
+            dueDate: "2025-05-20",
+            createdAt: new Date("2024-03-15"),
           },
           {
             id: "task-3-2-2",
@@ -415,6 +424,10 @@ export const mockCourses: Course[] = [
             type: "video",
             completed: false,
             description: "Ein Überblick über populäre Deep Learning Frameworks wie TensorFlow, PyTorch und Keras, ihre Vor- und Nachteile sowie typische Anwendungsfälle.",
+            course: "course-3",
+            status: "pending",
+            dueDate: "2025-05-23",
+            createdAt: new Date("2024-03-18"),
           },
           {
             id: "task-3-2-3",
@@ -423,10 +436,13 @@ export const mockCourses: Course[] = [
             completed: false,
             dueDate: "2025-05-28",
             description: "Implementieren Sie ein einfaches neuronales Netz zur Bilderkennung mit einem Framework Ihrer Wahl und trainieren Sie es mit dem MNIST-Datensatz.",
+            course: "course-3",
+            status: "pending",
+            createdAt: new Date("2024-03-20"),
           },
         ],
       },
-    ],
+    ], "course-3"),
   },
   {
     id: "course-4",
@@ -442,7 +458,7 @@ export const mockCourses: Course[] = [
     category: "Webentwicklung",
     level: "Beginner",
     duration: "8 Wochen",
-    modules: [
+    modules: ensureModuleProperties([
       {
         id: "module-4-1",
         title: "HTML und CSS Grundlagen",
@@ -560,7 +576,7 @@ export const mockCourses: Course[] = [
           },
         ],
       },
-    ],
+    ], "course-4"),
   },
   {
     id: "course-5",
@@ -575,7 +591,7 @@ export const mockCourses: Course[] = [
     category: "Programmierung",
     level: "Advanced",
     duration: "10 Wochen",
-    modules: [
+    modules: ensureModuleProperties([
       {
         id: "module-5-1",
         title: "Objektorientierte Programmierung",
@@ -587,6 +603,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: false,
             description: "Ein Überblick über gängige Design Patterns wie Factory, Singleton, Observer und ihre Anwendungen in der Softwareentwicklung.",
+            course: "course-5", 
+            status: "pending",
+            dueDate: "2025-05-10",
+            createdAt: new Date("2024-04-01"),
           },
           {
             id: "task-5-1-2",
@@ -594,8 +614,12 @@ export const mockCourses: Course[] = [
             type: "video",
             completed: false,
             description: "Dieses Video erklärt die fünf SOLID-Prinzipien der objektorientierten Programmierung und wie sie zu besserem Code führen.",
+            course: "course-5", 
+            status: "pending",
+            dueDate: "2025-05-15",
+            createdAt: new Date("2024-04-05"),
           }
-        ]
+        ],
       },
       {
         id: "module-5-2",
@@ -608,6 +632,10 @@ export const mockCourses: Course[] = [
             type: "reading",
             completed: false,
             description: "Diese Lektion behandelt Pure Functions, Immutability, Higher-Order Functions und andere grundlegende Konzepte der funktionalen Programmierung.",
+            course: "course-5", 
+            status: "pending",
+            dueDate: "2025-05-20",
+            createdAt: new Date("2024-04-10"),
           },
           {
             id: "task-5-2-2",
@@ -616,10 +644,13 @@ export const mockCourses: Course[] = [
             completed: false,
             dueDate: "2025-06-01",
             description: "Implementieren Sie eine kleine Anwendung unter Verwendung funktionaler Programmierparadigmen in einer Sprache Ihrer Wahl.",
+            course: "course-5", 
+            status: "pending",
+            createdAt: new Date("2024-04-15"),
           }
-        ]
+        ],
       }
-    ],
+    ], "course-5"),
   },
   {
     id: "course-6",
@@ -634,7 +665,7 @@ export const mockCourses: Course[] = [
     category: "Sicherheit",
     level: "Intermediate",
     duration: "6 Wochen",
-    modules: [
+    modules: ensureModuleProperties([
       {
         id: "module-6-1",
         title: "Grundlagen der Cybersicherheit",
@@ -662,7 +693,7 @@ export const mockCourses: Course[] = [
             dueDate: "2025-04-18",
             createdAt: new Date("2024-03-02"),
           }
-        ]
+        ],
       },
       {
         id: "module-6-2",
@@ -691,9 +722,9 @@ export const mockCourses: Course[] = [
             status: "pending",
             createdAt: new Date("2024-03-10"),
           }
-        ]
+        ],
       }
-    ],
+    ], "course-6"),
   },
   {
     id: "course-7",
@@ -708,13 +739,11 @@ export const mockCourses: Course[] = [
     category: "IT-Infrastruktur",
     level: "Intermediate",
     duration: "9 Wochen",
-    modules: [
+    modules: ensureModuleProperties([
       {
         id: "module-7-1",
         title: "Cloud-Grundlagen",
         description: "Einführung in Cloud-Computing-Konzepte und -Dienste.",
-        course_id: "course-7", // Adding this to match the interface
-        order: 1, // Adding this to match the interface
         tasks: [
           {
             id: "task-7-1-1",
@@ -738,14 +767,12 @@ export const mockCourses: Course[] = [
             dueDate: "2025-05-08",
             createdAt: new Date("2024-03-28"),
           }
-        ]
+        ],
       },
       {
         id: "module-7-2",
         title: "Serverless Computing",
         description: "Entwicklung von Anwendungen ohne Serveradministration.",
-        course_id: "course-7", // Adding this to match the interface
-        order: 2, // Adding this to match the interface
         tasks: [
           {
             id: "task-7-2-1",
@@ -769,9 +796,9 @@ export const mockCourses: Course[] = [
             status: "pending",
             createdAt: new Date("2024-04-10"),
           }
-        ]
+        ],
       }
-    ],
+    ], "course-7"),
   },
   {
     id: "course-8",
@@ -786,7 +813,7 @@ export const mockCourses: Course[] = [
     category: "Künstliche Intelligenz",
     level: "Advanced",
     duration: "14 Wochen",
-    modules: [
+    modules: ensureModuleProperties([
       {
         id: "module-8-1",
         title: "Natural Language Processing",
@@ -814,7 +841,7 @@ export const mockCourses: Course[] = [
             dueDate: "2025-04-18",
             createdAt: new Date("2024-03-02"),
           }
-        ]
+        ],
       },
       {
         id: "module-8-2",
@@ -854,8 +881,8 @@ export const mockCourses: Course[] = [
             status: "pending",
             createdAt: new Date("2024-03-15"),
           }
-        ]
+        ],
       }
-    ],
+    ], "course-8"),
   },
 ];

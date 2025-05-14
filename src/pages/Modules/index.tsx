@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { CompletedModule, User } from "@/types";
 import { 
@@ -11,7 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { mockCourses } from "@/data/mockData";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle, Clock } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 
 const ModulesPage = () => {

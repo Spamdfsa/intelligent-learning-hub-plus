@@ -118,6 +118,14 @@ export interface ChatMessage {
   timestamp: string;
 }
 
+// Student Chat related types
+export interface StudentChat {
+  id: string;
+  student_id: string;
+  student_name: string;
+  messages: ChatMessage[];
+}
+
 // Summary related types
 export interface Summary {
   id: string;
@@ -173,4 +181,14 @@ export interface Deadline {
   course_id: string;
   type: "assignment" | "quiz" | "exam";
   status: "upcoming" | "overdue" | "completed";
+}
+
+// CompletedModule type for the Modules page
+export interface CompletedModule {
+  id: string;
+  courseId: string;
+  moduleId: string;
+  title: string;
+  completedDate: string;
+  grade?: number;
 }

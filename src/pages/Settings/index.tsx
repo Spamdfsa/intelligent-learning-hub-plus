@@ -1,24 +1,11 @@
-
-import { useEffect, useState } from "react";
-import { User, UserSetting } from "@/types";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
+import { User, UserSettings } from "@/types";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
@@ -27,7 +14,7 @@ import { useTheme } from "@/components/ThemeProvider";
 
 const SettingsPage = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [settings, setSettings] = useState<UserSetting[]>([]);
+  const [settings, setSettings] = useState<UserSettings[]>([]);
   const { toast } = useToast();
   const { theme, setTheme, compactMode, setCompactMode } = useTheme();
 
@@ -39,7 +26,7 @@ const SettingsPage = () => {
     }
 
     // Mock settings
-    const mockSettings: UserSetting[] = [
+    const mockSettings: UserSettings[] = [
       // Appearance settings
       {
         id: "theme",
@@ -178,7 +165,7 @@ const SettingsPage = () => {
     }
   };
 
-  const renderSettingControl = (setting: UserSetting) => {
+  const renderSettingControl = (setting: UserSettings) => {
     if (setting.type === "toggle") {
       return (
         <Switch

@@ -36,12 +36,14 @@ const StudentChatsPage = () => {
             sender: "student",
             content: "Hallo, ich habe eine Frage zur Aufgabe 1.",
             timestamp: new Date().toISOString(),
+            role: "user", // Added missing role property
           },
           {
             id: uuidv4(),
             sender: "ai",
             content: "Hallo Max, natürlich! Was ist deine Frage?",
             timestamp: new Date().toISOString(),
+            role: "assistant", // Added missing role property
           },
         ],
       },
@@ -55,12 +57,14 @@ const StudentChatsPage = () => {
             sender: "student",
             content: "Ich verstehe das Konzept von Polymorphismus nicht ganz.",
             timestamp: new Date().toISOString(),
+            role: "user", // Added missing role property
           },
           {
             id: uuidv4(),
             sender: "ai",
             content: "Kein Problem, Anna! Polymorphismus bedeutet, dass ein Objekt viele Formen annehmen kann.",
             timestamp: new Date().toISOString(),
+            role: "assistant", // Added missing role property
           },
         ],
       },
@@ -82,7 +86,8 @@ const StudentChatsPage = () => {
       id: uuidv4(),
       sender: "student",
       content: newMessage,
-      timestamp: new Date().toISOString(), // Convert Date to ISO string format
+      timestamp: new Date().toISOString(),
+      role: "user", // Added missing role property
     };
   
     // Update the selected chat with the new message
@@ -116,7 +121,8 @@ const StudentChatsPage = () => {
       id: uuidv4(),
       sender: "ai",
       content: aiResponse,
-      timestamp: new Date().toISOString(), // Convert Date to ISO string
+      timestamp: new Date().toISOString(),
+      role: "assistant", // Added missing role property
     };
   
     setSelectedChat(prevChat => {
