@@ -20,6 +20,14 @@ export interface UserSettings {
   notifications: boolean;
   darkMode: boolean;
   language: string;
+  id?: string;
+  name?: string;
+  description?: string;
+  enabled?: boolean;
+  type?: "toggle" | "select" | "input";
+  options?: string[];
+  value?: string;
+  category?: string;
 }
 
 // Course related types

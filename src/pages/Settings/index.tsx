@@ -12,9 +12,21 @@ import { useToast } from "@/hooks/use-toast";
 import { Bell, User as UserIcon, Shield, Palette } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 
+// Define a separate interface for setting items
+interface SettingItem {
+  id: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+  type: "toggle" | "select" | "input";
+  options?: string[];
+  value?: string;
+  category: "appearance" | "notifications" | "privacy" | "account";
+}
+
 const SettingsPage = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [settings, setSettings] = useState<UserSettings[]>([]);
+  const [settings, setSettings] = useState<SettingItem[]>([]);
   const { toast } = useToast();
   const { theme, setTheme, compactMode, setCompactMode } = useTheme();
 
@@ -26,7 +38,7 @@ const SettingsPage = () => {
     }
 
     // Mock settings
-    const mockSettings: UserSettings[] = [
+    const mockSettings: SettingItem[] = [
       // Appearance settings
       {
         id: "theme",
@@ -165,7 +177,7 @@ const SettingsPage = () => {
     }
   };
 
-  const renderSettingControl = (setting: UserSettings) => {
+  const renderSettingControl = (setting: SettingItem) => {
     if (setting.type === "toggle") {
       return (
         <Switch
