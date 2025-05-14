@@ -4,140 +4,186 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ArrowRight } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
 import { useToast } from "@/hooks/use-toast";
 import { UserRole } from "@/types";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [role, setRole] = useState<UserRole>("student");
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const [isSignUp, setIsSignUp] = useState(false);
+  
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
-      // In a real app, this would be an API call
-      // Simulating login with mock data for demo
-      setTimeout(() => {
-        // Mock login logic
-        if (email && password) {
-          let userRole = role;
-          
-          if (email.includes('admin')) {
-            userRole = 'admin';
-          } else if (email.includes('lecturer')) {
-            userRole = 'lecturer';
-          } else if (email.includes('teacher')) {
-            userRole = 'teacher';
-          }
-          
-          // Store the user info in local storage for our mock authentication
-          localStorage.setItem('lms-user', JSON.stringify({
-            id: '1',
-            name: email.split('@')[0],
+    // In a real app, we would make an API call here
+    setTimeout(() => {
+      try {
+        if (isSignUp) {
+          // Create new user
+          const newUser = {
+            id: uuidv4(),
             email,
-            role: userRole,
-            avatar: null
-          }));
+            name,
+            role,
+            courses: [],
+            createdAt: new Date().toISOString()
+          };
           
+          localStorage.setItem("lms-user", JSON.stringify(newUser));
           toast({
-            title: "Login erfolgreich",
-            description: `Willkommen zurück, ${email.split('@')[0]}!`,
+            title: "Registrierung erfolgreich",
+            description: "Dein Konto wurde erstellt. Du wirst jetzt eingeloggt.",
           });
-          
-          navigate('/dashboard');
         } else {
+          // Mock login (in a real app, we would verify credentials)
+          const mockUser = {
+            id: uuidv4(),
+            email,
+            name: email.split("@")[0],
+            role,
+            courses: [],
+            createdAt: new Date().toISOString()
+          };
+          
+          localStorage.setItem("lms-user", JSON.stringify(mockUser));
           toast({
-            title: "Login fehlgeschlagen",
-            description: "Bitte überprüfe deine Login-Daten.",
-            variant: "destructive",
+            title: "Anmeldung erfolgreich",
+            description: "Du wurdest erfolgreich angemeldet.",
           });
         }
+        
+        navigate("/dashboard");
+      } catch (error) {
+        toast({
+          title: "Fehler",
+          description: "Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.",
+          variant: "destructive",
+        });
+      } finally {
         setIsLoading(false);
-      }, 1000);
-    } catch (error) {
-      toast({
-        title: "Login fehlgeschlagen",
-        description: "Ein Fehler ist aufgetreten. Bitte versuche es später erneut.",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-    }
+      }
+    }, 1000);
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold">Anmeldung</CardTitle>
+    <Card className="w-full shadow-lg">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl">
+          {isSignUp ? "Registrieren" : "Anmelden"}
+        </CardTitle>
         <CardDescription>
-          Melde dich mit deinen Zugangsdaten an, um fortzufahren.
+          {isSignUp
+            ? "Erstelle ein neues Konto für die Lernplattform"
+            : "Melde dich mit deinen Zugangsdaten an"}
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleLogin}>
-        <CardContent className="space-y-4">
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">E-Mail</Label>
             <Input
               id="email"
+              placeholder="deine.email@beispiel.de"
               type="email"
-              placeholder="name@beispiel.de"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Passwort</Label>
-              <a href="#" className="text-sm text-primary hover:underline">
-                Passwort vergessen?
-              </a>
+          
+          {isSignUp && (
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                placeholder="Dein Name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
             </div>
+          )}
+          
+          <div className="space-y-2">
+            <Label htmlFor="password">Passwort</Label>
             <Input
               id="password"
               type="password"
-              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
+          
           <div className="space-y-2">
-            <Label htmlFor="role">Rolle</Label>
-            <Select value={role} onValueChange={(value) => setRole(value as UserRole)}>
-              <SelectTrigger id="role">
-                <SelectValue placeholder="Rolle auswählen" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="student">Student</SelectItem>
-                <SelectItem value="teacher">Lehrkraft</SelectItem>
-                <SelectItem value="lecturer">Dozent</SelectItem>
-                <SelectItem value="admin">Administrator</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label>Rolle</Label>
+            <RadioGroup 
+              defaultValue="student" 
+              value={role}
+              onValueChange={(value) => setRole(value as UserRole)}
+              className="flex space-x-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="student" id="student" />
+                <Label htmlFor="student" className="font-normal">Student</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="lecturer" id="lecturer" />
+                <Label htmlFor="lecturer" className="font-normal">Dozent</Label>
+              </div>
+            </RadioGroup>
           </div>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
+          
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Anmeldung..." : "Anmelden"}
+            {isLoading ? (
+              "Wird verarbeitet..."
+            ) : isSignUp ? (
+              "Registrieren"
+            ) : (
+              "Anmelden"
+            )}
+            <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
-          <p className="text-sm text-center text-muted-foreground">
-            Wähle eine Rolle und gib beliebige Anmeldedaten ein, um fortzufahren.
-          </p>
-        </CardFooter>
-      </form>
+        </form>
+        
+        <div className="mt-4 text-center text-sm">
+          {isSignUp ? (
+            <p>
+              Bereits registriert?{" "}
+              <button
+                type="button"
+                className="underline text-primary font-medium"
+                onClick={() => setIsSignUp(false)}
+              >
+                Anmelden
+              </button>
+            </p>
+          ) : (
+            <p>
+              Noch kein Konto?{" "}
+              <button
+                type="button"
+                className="underline text-primary font-medium"
+                onClick={() => setIsSignUp(true)}
+              >
+                Registrieren
+              </button>
+            </p>
+          )}
+        </div>
+      </CardContent>
     </Card>
   );
 };

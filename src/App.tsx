@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import CoursesPage from "./pages/Courses";
 import CourseDetail from "./pages/Courses/CourseDetail";
 import CreateCourse from "./pages/Courses/CreateCourse";
+import MaterialsPage from "./pages/Materials";
 import MaterialCreate from "./pages/Materials/CreateMaterial";
 import AiTutor from "./pages/AiTutor";
 import TasksPage from "./pages/Tasks";
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="/courses/manage" element={<CoursesPage />} />
               <Route path="/courses/create" element={<CreateCourse />} />
               <Route path="/courses/:courseId" element={<CourseDetail />} />
+              <Route path="/materials" element={<MaterialsPage />} />
               <Route path="/materials/create" element={<MaterialCreate />} />
               <Route path="/ai-tutor" element={<AiTutor />} />
               <Route path="/tasks" element={<TasksPage />} />

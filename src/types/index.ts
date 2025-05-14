@@ -1,4 +1,5 @@
 
+// User related types
 export type UserRole = "student" | "teacher" | "lecturer" | "admin";
 
 export interface User {
@@ -6,35 +7,48 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
-  avatar: string | null;
   courses?: string[];
+  createdAt: string;
+  avatar?: string;
+  bio?: string;
+  department?: string;
+  university?: string;
+  settings?: UserSettings;
+}
+
+export interface UserSettings {
+  notifications: boolean;
+  darkMode: boolean;
+  language: string;
+}
+
+// Course related types
+export interface Course {
+  id: string;
+  title: string;
+  description: string;
+  instructor_id: string;
+  instructorId?: string;
+  instructor_name?: string;
+  created_at: string;
+  image_url?: string;
+  modules?: Module[];
+  status?: "active" | "archived" | "draft";
+  semester?: string;
+  category?: string;
+  tags?: string[];
+  students?: string[];
+  student_count?: number;
+  rating?: number;
 }
 
 export interface Module {
   id: string;
   title: string;
   description: string;
-  tasks: Task[];
-}
-
-export interface Course {
-  id: string;
-  title: string;
-  description: string;
-  instructor: string;
-  instructor_id?: string;
-  instructorId?: string;  // Alternative to instructor_id
-  level: "Beginner" | "Intermediate" | "Advanced";
-  progress?: number;
-  enrolled?: number;
-  enrolledStudents?: number;  // Alternative to enrolled
-  image?: string;
-  created_at?: string;
-  // Additional optional properties used in components
-  duration?: string;
-  category?: string;
-  bannerColor?: string;
-  modules?: Module[];
+  course_id: string;
+  order: number;
+  materials?: Material[];
 }
 
 export interface Material {
@@ -46,87 +60,100 @@ export interface Material {
   created_by: string;
   course_id: string;
   created_at: string;
+  module_id?: string;
+  order?: number;
+}
+
+// Task and Quiz related types
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  course: string;
+  dueDate: string;
+  status: "pending" | "submitted" | "graded";
+  type: "quiz" | "assignment" | "summary";
+  createdAt: Date;
+  submittedAt?: Date;
+  generatedBy?: string;
+  answer?: string;
+  feedback?: string;
+  grade?: string;
+  questions?: QuizQuestion[];
 }
 
 export interface QuizQuestion {
   id: string;
   question: string;
+  answerType: "multiple-choice" | "text" | "true-false";
   options?: string[];
   correctOption?: number;
-  answerType: "multiple-choice" | "text" | "true-false";
   correctAnswer?: string;
-  userAnswer?: number | string;
-  explanation?: string;
+  userAnswer?: string | number;
 }
 
-export interface Task {
-  id: string;
-  title: string;
-  description: string;
-  
-  // Make required fields optional when the alternative field is used
-  course_id?: string;
-  courseId?: string;  // Alternative to course_id
-  
-  due_date?: string;
-  dueDate?: string;  // Alternative to due_date
-  
-  created_by?: string;
-  status?: "pending" | "submitted" | "graded";
-  
-  // Optional fields
-  submission?: string;
-  grade?: string;
-  feedback?: string;
-  
-  // Fields used in components
-  type?: "reading" | "video" | "quiz" | "assignment";
-  completed?: boolean;
-  content?: string;
-  videoUrl?: string;
-  questions?: QuizQuestion[];
-  moduleId?: string;
-  
-  // Additional fields needed for the TasksPage
-  course?: string;
-  answer?: string;
-  submittedAt?: Date;
-  createdAt?: Date;
-  generatedBy?: string;
-}
-
-export interface StudentChat {
-  id: string;
-  student_id: string;
-  student_name: string;
-  messages: ChatMessage[];
-}
-
+// Chat related types
 export interface ChatMessage {
   id: string;
-  sender: "student" | "ai";
   content: string;
-  timestamp: string | Date;
-  role?: "user" | "assistant"; // Added role for compatibility with OpenAI API format
+  role: "user" | "assistant" | "system";
+  sender: string;
+  timestamp: string;
 }
 
-// Add missing interfaces for other components
-export interface CompletedModule {
+// Summary related types
+export interface Summary {
   id: string;
-  courseId: string;
-  moduleId: string;
   title: string;
-  completedDate: string;
-  grade?: number;
+  content: string;
+  course: string;
+  createdAt: Date;
+  module?: string;
 }
 
-export interface UserSetting {
+// Assignment related types
+export interface Assignment {
   id: string;
-  name: string;
+  title: string;
   description: string;
-  enabled: boolean;
-  type: "toggle" | "select" | "input";
-  options?: string[];
-  value?: string;
-  category: "appearance" | "notifications" | "privacy" | "account";
+  course_id: string;
+  due_date: string;
+  created_by: string;
+  max_points: number;
+  submissions?: Submission[];
+}
+
+export interface Submission {
+  id: string;
+  assignment_id: string;
+  student_id: string;
+  content: string;
+  submitted_at: string;
+  grade?: number;
+  feedback?: string;
+  graded_by?: string;
+  graded_at?: string;
+}
+
+// Student data types
+export interface StudentProgress {
+  user_id: string;
+  course_id: string;
+  modules_completed: number;
+  total_modules: number;
+  last_activity: string;
+  time_spent: number;
+  assignments_completed: number;
+  total_assignments: number;
+  average_grade: number;
+}
+
+export interface Deadline {
+  id: string;
+  title: string;
+  description: string;
+  due_date: string;
+  course_id: string;
+  type: "assignment" | "quiz" | "exam";
+  status: "upcoming" | "overdue" | "completed";
 }

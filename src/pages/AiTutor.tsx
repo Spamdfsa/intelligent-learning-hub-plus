@@ -382,28 +382,13 @@ Formuliere die Fragen themenspezifisch, herausfordernd und so, dass sie wirklich
         variant: "destructive",
       });
       
-      // Fallback to mock quiz if API fails
-      const quizId = uuidv4();
-      const mockQuiz = generateMockQuiz(courseSelection, parseInt(questionCount), difficulty);
-      
-      setGeneratedContent({
-        id: quizId,
-        title: `Quiz: ${courseSelection}`,
-        type: "quiz"
-      });
-      
-      saveToTasks({
-        id: quizId,
-        title: `Quiz: ${courseSelection}`,
-        description: mockQuiz.formattedDescription,
-        course: courseSelection,
-        dueDate: getRandomDueDate(),
-        status: "pending",
-        type: "quiz",
-        createdAt: new Date(),
-        generatedBy: "ai",
-        questions: mockQuiz.questions
-      });
+      // Don't use fallback to mock quiz if API fails
+      if (!apiKey) {
+        toast({
+          title: "API-Schlüssel erforderlich",
+          description: "Bitte füge einen OpenAI API-Schlüssel hinzu, um KI-generierte Quizze zu erstellen.",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -496,28 +481,13 @@ Die Zusammenfassung soll gut strukturiert und leicht verständlich sein, mit kla
         variant: "destructive",
       });
       
-      // Fallback to mock summary if API fails
-      const summaryId = uuidv4();
-      const mockSummaryContent = generateMockSummary(courseSelection, moduleSelection, summaryStyle);
-      
-      setGeneratedContent({
-        id: summaryId,
-        title: `Zusammenfassung: ${courseSelection}`,
-        type: "summary"
-      });
-      
-      // Save mock summary
-      const storedSummaries = localStorage.getItem("lms-summaries");
-      const summaries = storedSummaries ? JSON.parse(storedSummaries) : [];
-      summaries.push({
-        id: summaryId,
-        title: `Zusammenfassung: ${courseSelection} - ${moduleSelection}`,
-        content: mockSummaryContent,
-        course: courseSelection,
-        module: moduleSelection,
-        createdAt: new Date()
-      });
-      localStorage.setItem("lms-summaries", JSON.stringify(summaries));
+      // Don't use fallback to mock summary if API fails
+      if (!apiKey) {
+        toast({
+          title: "API-Schlüssel erforderlich",
+          description: "Bitte füge einen OpenAI API-Schlüssel hinzu, um KI-generierte Zusammenfassungen zu erstellen.",
+        });
+      }
     } finally {
       setIsLoading(false);
     }

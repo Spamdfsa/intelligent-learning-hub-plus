@@ -1,9 +1,12 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Search, BookOpen, Calendar, Download } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 interface Summary {
   id: string;
@@ -18,6 +21,9 @@ const SummariesPage = () => {
   const [summaries, setSummaries] = useState<Summary[]>([]);
   const [activeSummary, setActiveSummary] = useState<Summary | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
+  const summaryContentRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Get summaries from localStorage
@@ -80,9 +86,73 @@ const SummariesPage = () => {
     });
   };
 
-  const handleDownloadPDF = (summary: Summary) => {
-    // In a real application, this would generate and download a PDF
-    alert(`PDF für "${summary.title}" würde jetzt heruntergeladen werden.`);
+  const handleDownloadPDF = async (summary: Summary) => {
+    if (!summaryContentRef.current) return;
+    
+    setIsExporting(true);
+    try {
+      // Create a new jsPDF instance
+      const pdf = new jsPDF();
+      
+      // Add title
+      pdf.setFontSize(18);
+      pdf.text(summary.title, 20, 20);
+      
+      // Add course and date
+      pdf.setFontSize(12);
+      pdf.text(`Kurs: ${summary.course}`, 20, 30);
+      pdf.text(`Datum: ${formatDate(new Date(summary.createdAt))}`, 20, 40);
+      if (summary.module) {
+        pdf.text(`Modul: ${summary.module}`, 20, 50);
+      }
+      
+      // Convert content to canvas
+      const contentElement = summaryContentRef.current;
+      const canvas = await html2canvas(contentElement, {
+        scale: 1.5,
+        useCORS: true,
+        logging: false
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      
+      // Calculate dimensions to fit on page
+      const imgWidth = 170;
+      const imgHeight = canvas.height * imgWidth / canvas.width;
+      const yPosition = summary.module ? 60 : 50;
+      
+      // Add content image
+      pdf.addImage(imgData, 'PNG', 20, yPosition, imgWidth, imgHeight);
+      
+      // If content is too large, create multiple pages
+      let heightLeft = imgHeight;
+      let position = yPosition;
+      
+      while (heightLeft > pdf.internal.pageSize.height - position - 20) {
+        heightLeft -= (pdf.internal.pageSize.height - position - 20);
+        pdf.addPage();
+        position = 20;
+        pdf.addImage(imgData, 'PNG', 20, position, imgWidth, imgHeight);
+      }
+      
+      // Save the PDF
+      const filename = `${summary.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_zusammenfassung.pdf`;
+      pdf.save(filename);
+      
+      toast({
+        title: "PDF heruntergeladen",
+        description: "Die Zusammenfassung wurde erfolgreich als PDF heruntergeladen."
+      });
+    } catch (error) {
+      console.error("PDF export error:", error);
+      toast({
+        title: "Fehler beim Exportieren",
+        description: "Die PDF-Datei konnte nicht erstellt werden.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -117,7 +187,7 @@ const SummariesPage = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
-                    <span>{formatDate(summary.createdAt)}</span>
+                    <span>{formatDate(new Date(summary.createdAt))}</span>
                   </div>
                 </div>
                 <p className="text-sm line-clamp-3 mb-3">
@@ -151,23 +221,32 @@ const SummariesPage = () => {
                 Schließen
               </Button>
             </div>
-            <div className="p-6 overflow-y-auto flex-1">
+            <div className="p-6 overflow-y-auto flex-1" ref={summaryContentRef}>
               <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">
                 <BookOpen className="h-4 w-4" />
                 <span>{activeSummary.course}</span>
                 {activeSummary.module && (
                   <span>• {activeSummary.module}</span>
                 )}
-                <span>• {formatDate(activeSummary.createdAt)}</span>
+                <span>• {formatDate(new Date(activeSummary.createdAt))}</span>
               </div>
               <div className="prose max-w-none">
                 <pre className="whitespace-pre-wrap font-sans text-base">{activeSummary.content}</pre>
               </div>
             </div>
             <div className="p-4 border-t flex justify-end gap-2">
-              <Button onClick={() => handleDownloadPDF(activeSummary)}>
-                <Download className="mr-2 h-4 w-4" />
-                Als PDF herunterladen
+              <Button 
+                onClick={() => handleDownloadPDF(activeSummary)}
+                disabled={isExporting}
+              >
+                {isExporting ? (
+                  <>Loading...</>
+                ) : (
+                  <>
+                    <Download className="mr-2 h-4 w-4" />
+                    Als PDF herunterladen
+                  </>
+                )}
               </Button>
             </div>
           </div>
