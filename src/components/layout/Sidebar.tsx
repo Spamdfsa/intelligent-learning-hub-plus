@@ -30,33 +30,32 @@ export function Sidebar({ className, ...props }: SidebarProps) {
     }
   }, []);
 
-  // Define navigation items for different roles
-  const adminNavItems = [
-    { title: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
-    { title: "Kursverwaltung", href: "/courses/manage", icon: <BookOpen className="h-5 w-5" /> },
-    { title: "Benutzerverwaltung", href: "/users", icon: <Users className="h-5 w-5" /> },
-    { title: "Analytik", href: "/analytics", icon: <BarChart className="h-5 w-5" /> },
-    { title: "Einstellungen", href: "/settings", icon: <Settings className="h-5 w-5" /> },
-  ];
+  // Define navigation items by role - using a Map for dynamic lookup
+  const navigationItemsByRole = new Map<UserRole, Array<{ title: string; href: string; icon: JSX.Element }>>([
+    ["admin", [
+      { title: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
+      { title: "Kursverwaltung", href: "/courses/manage", icon: <BookOpen className="h-5 w-5" /> },
+      { title: "Benutzerverwaltung", href: "/users", icon: <Users className="h-5 w-5" /> },
+      { title: "Analytik", href: "/analytics", icon: <BarChart className="h-5 w-5" /> },
+      { title: "Einstellungen", href: "/settings", icon: <Settings className="h-5 w-5" /> },
+    ]],
+    ["student", [
+      { title: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
+      { title: "Meine Kurse", href: "/courses", icon: <BookOpen className="h-5 w-5" /> },
+      { title: "Materialien", href: "/materials", icon: <FileText className="h-5 w-5" /> },
+      { title: "Aufgaben", href: "/tasks", icon: <BookCheck className="h-5 w-5" /> },
+      { title: "Deadlines", href: "/deadlines", icon: <Calendar className="h-5 w-5" /> },
+      { title: "Lernfortschritt", href: "/progress", icon: <BarChart className="h-5 w-5" /> },
+      { title: "Abgeschlossene Module", href: "/modules", icon: <GraduationCap className="h-5 w-5" /> },
+      { title: "Zusammenfassungen", href: "/summaries", icon: <FileText className="h-5 w-5" /> },
+      { title: "KI-Tutor", href: "/ai-tutor", icon: <MessageSquare className="h-5 w-5" /> },
+      { title: "Profil", href: "/profile", icon: <UserIcon className="h-5 w-5" /> },
+      { title: "Einstellungen", href: "/settings", icon: <Settings className="h-5 w-5" /> },
+    ]]
+  ]);
 
-  const studentNavItems = [
-    { title: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
-    { title: "Meine Kurse", href: "/courses", icon: <BookOpen className="h-5 w-5" /> },
-    { title: "Materialien", href: "/materials", icon: <FileText className="h-5 w-5" /> },
-    { title: "Aufgaben", href: "/tasks", icon: <BookCheck className="h-5 w-5" /> },
-    { title: "Deadlines", href: "/deadlines", icon: <Calendar className="h-5 w-5" /> },
-    { title: "Lernfortschritt", href: "/progress", icon: <BarChart className="h-5 w-5" /> },
-    { title: "Abgeschlossene Module", href: "/modules", icon: <GraduationCap className="h-5 w-5" /> },
-    { title: "Zusammenfassungen", href: "/summaries", icon: <FileText className="h-5 w-5" /> },
-    { title: "KI-Tutor", href: "/ai-tutor", icon: <MessageSquare className="h-5 w-5" /> },
-    { title: "Profil", href: "/profile", icon: <UserIcon className="h-5 w-5" /> },
-    { title: "Einstellungen", href: "/settings", icon: <Settings className="h-5 w-5" /> },
-  ];
-
-  // Select navigation items based on user role - removed lecturer and teacher roles
-  const navItems = userRole === "admin" 
-    ? adminNavItems 
-    : studentNavItems;
+  // Default to student nav items if role is not recognized or defined
+  const navItems = userRole ? navigationItemsByRole.get(userRole) || navigationItemsByRole.get("student")! : [];
 
   return (
     <aside className={cn("pb-12 w-64 border-r h-screen flex flex-col", className)} {...props}>
